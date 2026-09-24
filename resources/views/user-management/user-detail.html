@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+  
+<!-- Mirrored from demo.dashboardpack.com/user-management-html/user-detail.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 24 Aug 2026 09:23:34 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=UTF-8" /><!-- /Added by HTTrack -->
+<head>
+    <title>Sofia Oliveira · User Management</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="User Management — a modern admin dashboard for users, admins, roles, permissions, teams, and audit trails. Built with HTML, Vite, and Tailwind CSS v4." />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1330" media="(prefers-color-scheme: dark)" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="User Management" />
+    <meta property="og:title" content="User Management — Admin Dashboard" />
+    <meta property="og:description" content="Users, admins, roles, permissions, teams, sessions, and audit trails in one modern dashboard: 48 responsive pages, light and dark themes, and lazy-loaded charts and tables." />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="User Management — Admin Dashboard" />
+    <meta name="twitter:description" content="A modern user & access management dashboard built with HTML, Vite, and Tailwind CSS v4." />
+    
+    <!-- Apply saved appearance before paint so there is no flash of the wrong theme -->
+    <script>
+      (function () {
+        try {
+          var root = document.documentElement;
+          var t = localStorage.getItem("usermgmt-theme") || "light";
+          var dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) root.classList.add("dark");
+    
+          var d = localStorage.getItem("usermgmt-density");
+          root.classList.add("density-" + (d && ["compact", "comfortable", "spacious"].includes(d) ? d : "comfortable"));
+    
+          // Keep in sync with PRESETS in src/js/modules/preset.js
+          // [hue, chroma, textLightness(light), textLightness(dark)]
+          var presets = { violet: [293, 0.24, 0.494, 0.75], blue: [262, 0.19, 0.484, 0.717], teal: [175, 0.13, 0.444, 0.674], rose: [357, 0.16, 0.493, 0.716] };
+          var p = presets[localStorage.getItem("usermgmt-color-preset")];
+          if (p) {
+            var fill = "oklch(" + (dark ? 0.68 : 0.589) + " " + p[1] + " " + p[0] + ")";
+            ["--primary", "--sidebar-primary", "--chart-1", "--ring", "--sidebar-ring"].forEach(function (v) {
+              root.style.setProperty(v, fill);
+            });
+            var text = "oklch(" + (dark ? p[3] : p[2]) + " " + p[1] + " " + p[0] + ")";
+            ["--primary-text", "--sidebar-primary-text", "--chart-1-text"].forEach(function (v) {
+              root.style.setProperty(v, text);
+            });
+            root.style.setProperty("--sidebar-accent-foreground", dark ? "oklch(0.95 " + p[1] * 0.12 + " " + p[0] + ")" : "oklch(0.40 " + p[1] * 0.62 + " " + p[0] + ")");
+          }
+    
+          if (localStorage.getItem("usermgmt-sidebar") === "collapsed") root.classList.add("sidebar-collapsed");
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="assets/main-KQ41WFZu.js"></script>
+    <link rel="stylesheet" crossorigin href="assets/main-BDUTwv5H.css">
+  </head>
+  <body class="min-h-screen">
+    <!-- Skip to content (keyboard users) -->
+    <a href="#main-content" class="skip-link">Skip to content</a>
+    
+    <!-- Mobile overlay -->
+    <div data-sidebar-overlay class="fixed inset-0 z-40 hidden bg-black/50 lg:hidden"></div>
+    
+    <aside
+      id="app-sidebar"
+      data-sidebar
+      aria-label="Primary"
+      class="fixed left-0 top-0 z-50 flex h-screen w-[264px] -translate-x-full flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-300 lg:translate-x-0"
+    >
+      <!-- Brand -->
+      <div class="flex h-16 items-center justify-between gap-3 border-b border-sidebar-border px-4">
+        <a href="index.html" data-brand-link class="flex items-center gap-2.5">
+          <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
+            <i data-lucide="users-round" class="size-4 text-sidebar-primary-foreground"></i>
+          </span>
+          <span data-brand-text class="flex flex-col leading-none">
+            <span class="text-sm font-bold tracking-tight text-sidebar-foreground">User Management</span>
+            <span class="text-[10px] font-medium uppercase tracking-widest text-sidebar-foreground/75">Admin Suite</span>
+          </span>
+        </a>
+        <button data-sidebar-close class="flex size-7 items-center justify-center rounded-md text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden" aria-label="Close menu">
+          <i data-lucide="x" class="size-4"></i>
+        </button>
+      </div>
+    
+      <!-- Collapse-to-rail toggle (desktop) -->
+      <button data-sidebar-collapse aria-label="Collapse sidebar" aria-expanded="true" class="absolute -end-3 top-[4.5rem] z-50 hidden size-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/75 shadow-sm transition-colors hover:text-sidebar-foreground lg:flex">
+        <i data-lucide="chevrons-left" data-collapse-icon class="size-3.5 transition-transform"></i>
+      </button>
+    
+      <!-- Nav -->
+      <nav class="flex-1 space-y-4 overflow-y-auto px-3 py-4" data-nav>
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Dashboards</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="index.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="layout-dashboard" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Overview</span></a></li>
+            <li><a href="analytics.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="chart-line" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Analytics</span></a></li>
+            <li><a href="security.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="shield-check" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Security</span></a></li>
+            <li><a href="onboarding.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user-round-plus" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Onboarding</span></a></li>
+            <li><a href="builder.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="component" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Builder</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Users</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="users.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="users" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>All Users</span></a></li>
+            <li><a href="add-user.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user-plus" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Add User</span></a></li>
+            <li><a href="invitations.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="mail-plus" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Invitations</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Access Control</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="admins.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user-cog" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Admins</span></a></li>
+            <li><a href="roles.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="key-round" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Roles</span></a></li>
+            <li><a href="permissions.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="lock" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Permissions</span></a></li>
+            <li><a href="modules.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="blocks" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Modules</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Organization</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="teams.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="users-round" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Teams</span></a></li>
+            <li><a href="groups.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="boxes" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Groups</span></a></li>
+            <li><a href="sessions.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="monitor-smartphone" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Sessions</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Monitoring</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="audit-log.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="scroll-text" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Audit Log</span></a></li>
+            <li><a href="reports.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="chart-column" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Reports</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Billing</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="billing.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="credit-card" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Billing</span></a></li>
+            <li><a href="subscriptions.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="repeat" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Subscriptions</span></a></li>
+            <li><a href="plans.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="layers" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Plans</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Apps</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="mail.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="mail" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Mailbox</span></a></li>
+            <li><a href="messages.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="message-square" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Messages</span></a></li>
+            <li><a href="calendar.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="calendar-days" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Calendar</span></a></li>
+            <li><a href="tasks.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="square-kanban" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Task Board</span></a></li>
+            <li><a href="files.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="image" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Brand Assets</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>UI Kit</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="ui-components.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="component" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Components</span></a></li>
+            <li><a href="ui-forms.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="square-check" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Forms</span></a></li>
+            <li><a href="ui-tables.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="table" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Tables</span></a></li>
+            <li><a href="ui-charts.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="chart-pie" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Charts</span></a></li>
+            <li><a href="ui-typography.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="type" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Typography</span></a></li>
+            <li><a href="ui-icons.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="sparkles" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Icons</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Account</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="profile.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Profile</span></a></li>
+            <li><a href="settings.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="settings" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Settings</span></a></li>
+            <li><a href="api-keys.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="key" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>API Keys</span></a></li>
+            <li><a href="help.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="life-buoy" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Help Center</span></a></li>
+            <li><a href="docs.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="book-open" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Documentation</span></a></li>
+          </ul>
+        </div>
+      </nav>
+    
+      <!-- Signed-in user -->
+      <div class="border-t border-sidebar-border p-3">
+        <a href="profile.html" data-user-row class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent/60">
+          <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/12 text-xs font-semibold text-sidebar-primary-text">AM</span>
+          <span data-user-meta class="min-w-0 flex-1 leading-tight">
+            <span class="block truncate text-sm font-medium text-sidebar-foreground">Amara Okonkwo</span>
+            <span class="block truncate text-xs text-sidebar-foreground/75">Workspace Owner</span>
+          </span>
+          <i data-lucide="chevron-right" data-user-meta class="size-4 shrink-0 text-sidebar-foreground/40"></i>
+        </a>
+      </div>
+    </aside>
+    <div data-app-shell class="flex min-h-screen min-w-0 flex-col lg:ms-[264px]">
+      <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6">
+        <div class="flex items-center gap-3">
+          <button data-sidebar-open aria-controls="app-sidebar" aria-expanded="false" class="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden" aria-label="Open menu">
+            <i data-lucide="menu" class="size-5"></i>
+          </button>
+          <button data-cmdk-open type="button" class="hidden h-9 w-64 items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 sm:flex lg:w-72">
+            <i data-lucide="search" class="size-4 text-muted-foreground/70"></i>
+            <span class="flex-1 text-start">Search users, roles, pages…</span>
+            <kbd class="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
+          </button>
+        </div>
+      
+        <div class="flex items-center gap-2">
+          <a href="add-user.html" class="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex">
+            <i data-lucide="user-plus" class="size-4"></i> Invite user
+          </a>
+      
+          <button data-theme-toggle class="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Toggle theme">
+            <i data-lucide="moon" class="size-4 dark:hidden"></i>
+            <i data-lucide="sun" class="hidden size-4 dark:block"></i>
+          </button>
+      
+          <!-- Appearance customizer -->
+          <div class="relative" data-customizer>
+            <button data-customizer-btn aria-label="Customize appearance" aria-expanded="false" class="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+              <i data-lucide="palette" class="size-4"></i>
+            </button>
+            <div data-customizer-panel class="absolute end-0 z-40 mt-2 hidden w-64 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-lg">
+              <p class="mb-1.5 text-xs font-semibold text-muted-foreground">Theme</p>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" data-set-theme="light" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="sun" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Light</span></button>
+                <button type="button" data-set-theme="dark" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="moon" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Dark</span></button>
+                <button type="button" data-set-theme="system" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="monitor" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">System</span></button>
+              </div>
+              <p class="mb-1.5 mt-3 text-xs font-semibold text-muted-foreground">Color</p>
+              <div class="grid grid-cols-4 gap-1.5">
+                <button type="button" data-set-color="violet" aria-label="Violet" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.24 293)"></span></button>
+                <button type="button" data-set-color="blue" aria-label="Blue" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.19 262)"></span></button>
+                <button type="button" data-set-color="teal" aria-label="Teal" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.13 175)"></span></button>
+                <button type="button" data-set-color="rose" aria-label="Rose" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.16 357)"></span></button>
+              </div>
+              <p class="mb-1.5 mt-3 text-xs font-semibold text-muted-foreground">Density</p>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" data-set-density="compact" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="rows-3" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Compact</span></button>
+                <button type="button" data-set-density="comfortable" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="rows-4" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Cozy</span></button>
+                <button type="button" data-set-density="spacious" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="stretch-horizontal" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Roomy</span></button>
+              </div>
+            </div>
+          </div>
+      
+          <a href="notifications.html" class="relative flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Notifications">
+            <i data-lucide="bell" class="size-4"></i>
+            <span class="absolute end-1.5 top-1.5 size-1.5 rounded-full bg-destructive"></span>
+          </a>
+          <a href="profile.html" class="ms-1 flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary-text" aria-label="Profile">AM</a>
+        </div>
+      </header>
+      <main id="main-content" tabindex="-1" class="min-w-0 flex-1 p-4 sm:p-6">
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <a href="users.html" class="transition-colors hover:text-foreground">All Users</a>
+          <i data-lucide="chevron-right" class="size-3.5"></i>
+          <span class="text-foreground">Sofia Oliveira</span>
+        </nav>
+
+        <!-- Profile header -->
+        <div class="mt-4 rounded-xl border border-border bg-card p-5">
+          <div class="flex flex-col gap-5 lg:flex-row lg:items-start">
+            <span class="flex size-16 shrink-0 items-center justify-center rounded-full text-xl font-semibold" style="background-color:color-mix(in oklch, var(--chart-3) 14%, transparent);color:var(--chart-3-text)">SO</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h1 class="text-xl font-bold tracking-tight text-foreground">Sofia Oliveira</h1>
+                <span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-active) 14%, transparent);color:var(--status-active-text)"><span class="size-1.5 rounded-full" style="background-color:var(--status-active)"></span>Active</span>
+                <span class="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">Manager</span>
+              </div>
+              <p class="mt-1 text-sm text-muted-foreground">sofia.oliveira@northwind.co · Support · Porto, Portugal</p>
+              <dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+                <div><dt class="text-xs text-muted-foreground">User ID</dt><dd class="mt-0.5 font-mono text-foreground">usr_8f21c04b</dd></div>
+                <div><dt class="text-xs text-muted-foreground">Joined</dt><dd class="mt-0.5 text-foreground">Aug 17, 2026</dd></div>
+                <div><dt class="text-xs text-muted-foreground">Last active</dt><dd class="mt-0.5 text-foreground">3 hours ago</dd></div>
+                <div><dt class="text-xs text-muted-foreground">MFA</dt><dd class="mt-0.5 inline-flex items-center gap-1.5" style="color:var(--success-text)"><i data-lucide="shield-check" class="size-3.5"></i>Authenticator app</dd></div>
+              </dl>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" data-toast="Password reset email sent" class="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"><i data-lucide="key-round" class="size-4"></i> Reset password</button>
+              <button type="button" data-toast="Profile editor would open here" class="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"><i data-lucide="pencil" class="size-4"></i> Edit</button>
+              <button type="button" data-toast="Sofia Oliveira suspended" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90" style="background-color:var(--destructive)"><i data-lucide="ban" class="size-4"></i> Suspend</button>
+            </div>
+          </div>
+        </div>
+
+        <!--
+          Tabs. Keep display utilities (grid/flex) off [data-panel] — the tab
+          script toggles `hidden`, and two display utilities on one element
+          resolve by CSS source order, not class order.
+        -->
+        <div data-tabs class="mt-4">
+          <div class="flex gap-1 overflow-x-auto border-b border-border">
+            <button type="button" data-tab="overview" class="border-b-2 border-primary px-4 py-2.5 text-sm font-medium text-foreground transition-colors">Overview</button>
+            <button type="button" data-tab="activity" class="border-b-2 border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Activity</button>
+            <button type="button" data-tab="access" class="border-b-2 border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Access</button>
+            <button type="button" data-tab="sessions" class="border-b-2 border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Sessions</button>
+            <button type="button" data-tab="billing" class="border-b-2 border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Billing</button>
+          </div>
+
+          <!-- Overview -->
+          <div data-panel="overview" class="mt-4">
+            <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              <div class="space-y-4 xl:col-span-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div class="rounded-xl border border-border bg-card p-4">
+                    <p class="text-sm text-muted-foreground">Sign-ins (30d)</p>
+                    <div class="mt-2 flex items-end justify-between gap-2">
+                      <p class="font-mono text-2xl font-bold tabular-nums text-foreground">86</p>
+                      <span data-sparkline="2,3,4,3,5,4,2,0,0,3,4,5,4,3,5,4,2,0,1,4,5,4,3,4,5,3,2,0,1,4" data-color="chart-1" data-w="72" data-h="28" data-area></span>
+                    </div>
+                  </div>
+                  <div class="rounded-xl border border-border bg-card p-4">
+                    <p class="text-sm text-muted-foreground">Actions taken</p>
+                    <div class="mt-2 flex items-end justify-between gap-2">
+                      <p class="font-mono text-2xl font-bold tabular-nums text-foreground">1,204</p>
+                      <span data-sparkline="28,34,41,38,52,47,29,12,9,44,51,58,49,42,55,47,31,14,18,46,54,49,38,44,57,36,27,11,19,48" data-color="chart-2" data-w="72" data-h="28" data-area></span>
+                    </div>
+                  </div>
+                  <div class="rounded-xl border border-border bg-card p-4">
+                    <p class="text-sm text-muted-foreground">Tickets resolved</p>
+                    <div class="mt-2 flex items-end justify-between gap-2">
+                      <p class="font-mono text-2xl font-bold tabular-nums text-foreground">312</p>
+                      <span data-sparkline="8,11,14,12,17,15,9,3,2,13,16,18,15,13,17,15,10,4,5,14,17,15,12,14,18,11,8,3,6,15" data-color="chart-5" data-w="72" data-h="28" data-area></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-border bg-card">
+                  <div class="border-b border-border p-4"><h2 class="text-base font-semibold text-foreground">Profile</h2></div>
+                  <dl class="grid grid-cols-1 gap-x-6 gap-y-4 p-4 sm:grid-cols-2">
+                    <div><dt class="text-xs text-muted-foreground">Full name</dt><dd class="mt-0.5 text-sm text-foreground">Sofia Oliveira</dd></div>
+                    <div><dt class="text-xs text-muted-foreground">Display name</dt><dd class="mt-0.5 text-sm text-foreground">Sofia</dd></div>
+                    <div><dt class="text-xs text-muted-foreground">Email</dt><dd class="mt-0.5 text-sm text-foreground">sofia.oliveira@northwind.co</dd></div>
+                    <div><dt class="text-xs text-muted-foreground">Phone</dt><dd class="mt-0.5 text-sm text-foreground">+351 912 004 118</dd></div>
+                    <div><dt class="text-xs text-muted-foreground">Job title</dt><dd class="mt-0.5 text-sm text-foreground">Support Manager, EMEA</dd></div>
+                    <div><dt class="text-xs text-muted-foreground">Reports to</dt><dd class="mt-0.5 text-sm text-foreground">Amara Okonkwo</dd></div>
+                    <div><dt class="text-xs text-muted-foreground">Time zone</dt><dd class="mt-0.5 text-sm text-foreground">Europe/Lisbon (WEST)</dd></div>
+                    <div><dt class="text-xs text-muted-foreground">Language</dt><dd class="mt-0.5 text-sm text-foreground">English (UK)</dd></div>
+                    <div class="sm:col-span-2"><dt class="text-xs text-muted-foreground">Notes</dt><dd class="mt-0.5 text-sm text-foreground">Escalation owner for EMEA enterprise accounts. Requires access to the billing console during renewal season.</dd></div>
+                  </dl>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div class="rounded-xl border border-border bg-card">
+                  <div class="border-b border-border p-4"><h2 class="text-base font-semibold text-foreground">Teams &amp; groups</h2></div>
+                  <ul class="divide-y divide-border">
+                    <li class="flex items-center gap-3 p-4"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="users-round" class="size-4" style="color:var(--chart-1-text)"></i></span><div class="min-w-0 flex-1"><p class="text-sm font-medium text-foreground">Support</p><p class="text-xs text-muted-foreground">Primary team · Manager</p></div></li>
+                    <li class="flex items-center gap-3 p-4"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-2-text)"></i></span><div class="min-w-0 flex-1"><p class="text-sm font-medium text-foreground">EMEA Escalations</p><p class="text-xs text-muted-foreground">Group · 14 members</p></div></li>
+                    <li class="flex items-center gap-3 p-4"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><div class="min-w-0 flex-1"><p class="text-sm font-medium text-foreground">Billing Console Access</p><p class="text-xs text-muted-foreground">Group · 9 members</p></div></li>
+                  </ul>
+                </div>
+
+                <div class="rounded-xl border border-border bg-card">
+                  <div class="border-b border-border p-4"><h2 class="text-base font-semibold text-foreground">Security</h2></div>
+                  <ul class="divide-y divide-border text-sm">
+                    <li class="flex items-center justify-between p-4"><span class="text-muted-foreground">MFA</span><span class="inline-flex items-center gap-1.5 font-medium" style="color:var(--success-text)"><i data-lucide="shield-check" class="size-3.5"></i>Enrolled</span></li>
+                    <li class="flex items-center justify-between p-4"><span class="text-muted-foreground">Password age</span><span class="font-medium text-foreground">41 days</span></li>
+                    <li class="flex items-center justify-between p-4"><span class="text-muted-foreground">SSO identity</span><span class="font-medium text-foreground">Okta</span></li>
+                    <li class="flex items-center justify-between p-4"><span class="text-muted-foreground">Risk score</span><span class="font-medium" style="color:var(--success-text)">Low</span></li>
+                    <li class="flex items-center justify-between p-4"><span class="text-muted-foreground">Failed sign-ins (30d)</span><span class="font-medium text-foreground">2</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity -->
+          <div data-panel="activity" class="mt-4 hidden">
+            <div class="rounded-xl border border-border bg-card">
+              <div class="border-b border-border p-4">
+                <h2 class="text-base font-semibold text-foreground">Activity timeline</h2>
+                <p class="text-xs text-muted-foreground">Everything this account has done, newest first</p>
+              </div>
+              <ol class="relative p-4 ps-8">
+                <span class="absolute bottom-6 start-[1.6rem] top-6 w-px bg-border" aria-hidden="true"></span>
+                <li class="relative pb-6 ps-6"><span class="absolute -start-[0.4rem] top-1 size-4 rounded-full ring-4 ring-card" style="background-color:var(--chart-1)"></span><p class="text-sm font-medium text-foreground">Signed in from Porto, PT</p><p class="text-xs text-muted-foreground">Chrome on macOS · 3 hours ago</p></li>
+                <li class="relative pb-6 ps-6"><span class="absolute -start-[0.4rem] top-1 size-4 rounded-full ring-4 ring-card" style="background-color:var(--chart-2)"></span><p class="text-sm font-medium text-foreground">Resolved ticket #48219</p><p class="text-xs text-muted-foreground">Enterprise escalation · 4 hours ago</p></li>
+                <li class="relative pb-6 ps-6"><span class="absolute -start-[0.4rem] top-1 size-4 rounded-full ring-4 ring-card" style="background-color:var(--warning)"></span><p class="text-sm font-medium text-foreground">Requested MFA reset</p><p class="text-xs text-muted-foreground">Approved by Tomas Berg · 3 hours ago</p></li>
+                <li class="relative pb-6 ps-6"><span class="absolute -start-[0.4rem] top-1 size-4 rounded-full ring-4 ring-card" style="background-color:var(--chart-5)"></span><p class="text-sm font-medium text-foreground">Added to <span class="font-semibold">Billing Console Access</span></p><p class="text-xs text-muted-foreground">By Amara Okonkwo · Yesterday, 2:14 PM</p></li>
+                <li class="relative pb-6 ps-6"><span class="absolute -start-[0.4rem] top-1 size-4 rounded-full ring-4 ring-card" style="background-color:var(--chart-3)"></span><p class="text-sm font-medium text-foreground">Role changed from <span class="font-semibold">Editor</span> to <span class="font-semibold">Manager</span></p><p class="text-xs text-muted-foreground">By Amara Okonkwo · Aug 18, 2026</p></li>
+                <li class="relative pb-6 ps-6"><span class="absolute -start-[0.4rem] top-1 size-4 rounded-full ring-4 ring-card" style="background-color:var(--chart-2)"></span><p class="text-sm font-medium text-foreground">Completed onboarding checklist</p><p class="text-xs text-muted-foreground">6 of 6 steps · Aug 17, 2026</p></li>
+                <li class="relative ps-6"><span class="absolute -start-[0.4rem] top-1 size-4 rounded-full ring-4 ring-card" style="background-color:var(--chart-1)"></span><p class="text-sm font-medium text-foreground">Account created</p><p class="text-xs text-muted-foreground">Invited by Priya Raghavan · Aug 17, 2026</p></li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Access -->
+          <div data-panel="access" class="mt-4 hidden">
+            <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              <div class="rounded-xl border border-border bg-card xl:col-span-2">
+                <div class="border-b border-border p-4">
+                  <h2 class="text-base font-semibold text-foreground">Effective permissions</h2>
+                  <p class="text-xs text-muted-foreground">Granted by the Manager role and group membership</p>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-sm">
+                    <thead><tr class="border-b border-border text-left text-xs font-medium text-muted-foreground"><th class="px-4 py-2.5">Resource</th><th class="px-4 py-2.5">View</th><th class="px-4 py-2.5">Create</th><th class="px-4 py-2.5">Edit</th><th class="px-4 py-2.5">Delete</th><th class="px-4 py-2.5">Granted by</th></tr></thead>
+                    <tbody class="divide-y divide-border">
+                      <tr><td class="px-4 py-2.5 font-medium text-foreground">Tickets</td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5 text-muted-foreground">Manager role</td></tr>
+                      <tr><td class="px-4 py-2.5 font-medium text-foreground">Users</td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5 text-muted-foreground">Manager role</td></tr>
+                      <tr><td class="px-4 py-2.5 font-medium text-foreground">Teams</td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5 text-muted-foreground">Manager role</td></tr>
+                      <tr><td class="px-4 py-2.5 font-medium text-foreground">Billing</td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5 text-muted-foreground">Billing Console Access</td></tr>
+                      <tr><td class="px-4 py-2.5 font-medium text-foreground">Reports</td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="check" class="size-4" style="color:var(--success-text)"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5 text-muted-foreground">Manager role</td></tr>
+                      <tr><td class="px-4 py-2.5 font-medium text-foreground">Audit log</td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5"><i data-lucide="minus" class="size-4 text-muted-foreground/50"></i></td><td class="px-4 py-2.5 text-muted-foreground">—</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-border bg-card">
+                <div class="border-b border-border p-4"><h2 class="text-base font-semibold text-foreground">Connected apps</h2></div>
+                <ul class="divide-y divide-border">
+                  <li><label class="flex cursor-pointer items-center justify-between gap-3 p-4"><span class="min-w-0"><span class="block text-sm font-medium text-foreground">Zendesk</span><span class="block text-xs text-muted-foreground">Provisioned via SCIM</span></span><input type="checkbox" checked class="switch-input sr-only" /><span class="switch"></span></label></li>
+                  <li><label class="flex cursor-pointer items-center justify-between gap-3 p-4"><span class="min-w-0"><span class="block text-sm font-medium text-foreground">Slack</span><span class="block text-xs text-muted-foreground">Provisioned via SCIM</span></span><input type="checkbox" checked class="switch-input sr-only" /><span class="switch"></span></label></li>
+                  <li><label class="flex cursor-pointer items-center justify-between gap-3 p-4"><span class="min-w-0"><span class="block text-sm font-medium text-foreground">Billing console</span><span class="block text-xs text-muted-foreground">Granted manually</span></span><input type="checkbox" checked class="switch-input sr-only" /><span class="switch"></span></label></li>
+                  <li><label class="flex cursor-pointer items-center justify-between gap-3 p-4"><span class="min-w-0"><span class="block text-sm font-medium text-foreground">Data warehouse</span><span class="block text-xs text-muted-foreground">Not granted</span></span><input type="checkbox" class="switch-input sr-only" /><span class="switch"></span></label></li>
+                  <li><label class="flex items-center justify-between gap-3 p-4 opacity-60"><span class="min-w-0"><span class="block text-sm font-medium text-foreground">Admin console</span><span class="block text-xs text-muted-foreground">Requires the Admin role</span></span><input type="checkbox" disabled class="switch-input sr-only" /><span class="switch"></span></label></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sessions -->
+          <div data-panel="sessions" class="mt-4 hidden">
+            <div class="rounded-xl border border-border bg-card">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+                <div>
+                  <h2 class="text-base font-semibold text-foreground">Active sessions</h2>
+                  <p class="text-xs text-muted-foreground">Signing out revokes the refresh token immediately</p>
+                </div>
+                <button type="button" data-toast="All other sessions revoked" class="rounded-lg border border-input px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent">Revoke all others</button>
+              </div>
+              <ul class="divide-y divide-border">
+                <li class="flex flex-wrap items-center gap-3 p-4">
+                  <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted"><i data-lucide="laptop" class="size-4 text-muted-foreground"></i></span>
+                  <div class="min-w-0 flex-1"><p class="text-sm font-medium text-foreground">MacBook Pro · Chrome 141</p><p class="text-xs text-muted-foreground">Porto, PT · 88.157.42.19 · Started 3 hours ago</p></div>
+                  <span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-active) 14%, transparent);color:var(--status-active-text)">This device</span>
+                </li>
+                <li class="flex flex-wrap items-center gap-3 p-4">
+                  <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted"><i data-lucide="smartphone" class="size-4 text-muted-foreground"></i></span>
+                  <div class="min-w-0 flex-1"><p class="text-sm font-medium text-foreground">iPhone 17 · Safari</p><p class="text-xs text-muted-foreground">Porto, PT · 92.250.11.4 · Started yesterday</p></div>
+                  <button type="button" data-toast="Session revoked" class="rounded-lg border border-input px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent">Revoke</button>
+                </li>
+                <li class="flex flex-wrap items-center gap-3 p-4">
+                  <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted"><i data-lucide="tablet" class="size-4 text-muted-foreground"></i></span>
+                  <div class="min-w-0 flex-1"><p class="text-sm font-medium text-foreground">iPad Air · Safari</p><p class="text-xs text-muted-foreground">Lisbon, PT · 188.250.9.71 · Started 6 days ago</p></div>
+                  <button type="button" data-toast="Session revoked" class="rounded-lg border border-input px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent">Revoke</button>
+                </li>
+                <li class="flex flex-wrap items-center gap-3 p-4">
+                  <span class="flex size-9 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--warning) 14%, transparent)"><i data-lucide="triangle-alert" class="size-4" style="color:var(--warning-text)"></i></span>
+                  <div class="min-w-0 flex-1"><p class="text-sm font-medium text-foreground">Unknown device · Firefox 148</p><p class="text-xs text-muted-foreground">Frankfurt, DE · 45.129.8.203 · Started 11 days ago</p></div>
+                  <button type="button" data-toast="Session revoked" class="rounded-lg px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90" style="background-color:var(--destructive)">Revoke</button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Billing -->
+          <div data-panel="billing" class="mt-4 hidden">
+            <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              <div class="rounded-xl border border-border bg-card">
+                <div class="border-b border-border p-4"><h2 class="text-base font-semibold text-foreground">Seat</h2></div>
+                <div class="space-y-4 p-4 text-sm">
+                  <div class="flex items-center justify-between"><span class="text-muted-foreground">Plan</span><span class="font-medium text-foreground">Business</span></div>
+                  <div class="flex items-center justify-between"><span class="text-muted-foreground">Seat cost</span><span class="font-mono font-medium tabular-nums text-foreground">$32.00 / mo</span></div>
+                  <div class="flex items-center justify-between"><span class="text-muted-foreground">Assigned</span><span class="text-foreground">Aug 17, 2026</span></div>
+                  <div class="flex items-center justify-between"><span class="text-muted-foreground">Cost centre</span><span class="text-foreground">Support — EMEA</span></div>
+                </div>
+              </div>
+              <div class="rounded-xl border border-border bg-card xl:col-span-2">
+                <div class="border-b border-border p-4"><h2 class="text-base font-semibold text-foreground">Recent charges</h2></div>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-sm">
+                    <thead><tr class="border-b border-border text-left text-xs font-medium text-muted-foreground"><th class="px-4 py-2.5">Invoice</th><th class="px-4 py-2.5">Period</th><th class="px-4 py-2.5">Amount</th><th class="px-4 py-2.5">Status</th></tr></thead>
+                    <tbody class="divide-y divide-border">
+                      <tr><td class="px-4 py-2.5"><a href="invoice.html" class="font-medium text-foreground hover:text-primary-text underline underline-offset-2 hover:no-underline">INV-2026-0841</a></td><td class="px-4 py-2.5 text-muted-foreground">Aug 2026</td><td class="px-4 py-2.5 font-mono tabular-nums text-foreground">$32.00</td><td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-invited) 16%, transparent);color:var(--status-invited-text)">Pending</span></td></tr>
+                      <tr><td class="px-4 py-2.5"><a href="invoice.html" class="font-medium text-foreground hover:text-primary-text underline underline-offset-2 hover:no-underline">INV-2026-0772</a></td><td class="px-4 py-2.5 text-muted-foreground">Jul 2026</td><td class="px-4 py-2.5 font-mono tabular-nums text-foreground">$32.00</td><td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-active) 16%, transparent);color:var(--status-active-text)">Paid</span></td></tr>
+                      <tr><td class="px-4 py-2.5"><a href="invoice.html" class="font-medium text-foreground hover:text-primary-text underline underline-offset-2 hover:no-underline">INV-2026-0703</a></td><td class="px-4 py-2.5 text-muted-foreground">Jun 2026</td><td class="px-4 py-2.5 font-mono tabular-nums text-foreground">$32.00</td><td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-active) 16%, transparent);color:var(--status-active-text)">Paid</span></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <footer class="border-t border-border px-4 py-4 text-xs text-muted-foreground sm:px-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p>User Management — Admin Dashboard. Demo data is fictional.</p>
+          <p>Built with Vite, Tailwind CSS v4, and vanilla JavaScript.</p>
+        </div>
+      </footer>
+    </div>
+  </body>
+
+<!-- Mirrored from demo.dashboardpack.com/user-management-html/user-detail.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 24 Aug 2026 09:23:34 GMT -->
+</html>

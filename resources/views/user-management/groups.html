@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+  
+<!-- Mirrored from demo.dashboardpack.com/user-management-html/groups.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 24 Aug 2026 09:23:26 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=UTF-8" /><!-- /Added by HTTrack -->
+<head>
+    <title>Groups · User Management</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="User Management — a modern admin dashboard for users, admins, roles, permissions, teams, and audit trails. Built with HTML, Vite, and Tailwind CSS v4." />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1330" media="(prefers-color-scheme: dark)" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="User Management" />
+    <meta property="og:title" content="User Management — Admin Dashboard" />
+    <meta property="og:description" content="Users, admins, roles, permissions, teams, sessions, and audit trails in one modern dashboard: 48 responsive pages, light and dark themes, and lazy-loaded charts and tables." />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="User Management — Admin Dashboard" />
+    <meta name="twitter:description" content="A modern user & access management dashboard built with HTML, Vite, and Tailwind CSS v4." />
+    
+    <!-- Apply saved appearance before paint so there is no flash of the wrong theme -->
+    <script>
+      (function () {
+        try {
+          var root = document.documentElement;
+          var t = localStorage.getItem("usermgmt-theme") || "light";
+          var dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) root.classList.add("dark");
+    
+          var d = localStorage.getItem("usermgmt-density");
+          root.classList.add("density-" + (d && ["compact", "comfortable", "spacious"].includes(d) ? d : "comfortable"));
+    
+          // Keep in sync with PRESETS in src/js/modules/preset.js
+          // [hue, chroma, textLightness(light), textLightness(dark)]
+          var presets = { violet: [293, 0.24, 0.494, 0.75], blue: [262, 0.19, 0.484, 0.717], teal: [175, 0.13, 0.444, 0.674], rose: [357, 0.16, 0.493, 0.716] };
+          var p = presets[localStorage.getItem("usermgmt-color-preset")];
+          if (p) {
+            var fill = "oklch(" + (dark ? 0.68 : 0.589) + " " + p[1] + " " + p[0] + ")";
+            ["--primary", "--sidebar-primary", "--chart-1", "--ring", "--sidebar-ring"].forEach(function (v) {
+              root.style.setProperty(v, fill);
+            });
+            var text = "oklch(" + (dark ? p[3] : p[2]) + " " + p[1] + " " + p[0] + ")";
+            ["--primary-text", "--sidebar-primary-text", "--chart-1-text"].forEach(function (v) {
+              root.style.setProperty(v, text);
+            });
+            root.style.setProperty("--sidebar-accent-foreground", dark ? "oklch(0.95 " + p[1] * 0.12 + " " + p[0] + ")" : "oklch(0.40 " + p[1] * 0.62 + " " + p[0] + ")");
+          }
+    
+          if (localStorage.getItem("usermgmt-sidebar") === "collapsed") root.classList.add("sidebar-collapsed");
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="assets/main-KQ41WFZu.js"></script>
+    <link rel="stylesheet" crossorigin href="assets/main-BDUTwv5H.css">
+  </head>
+  <body class="min-h-screen">
+    <!-- Skip to content (keyboard users) -->
+    <a href="#main-content" class="skip-link">Skip to content</a>
+    
+    <!-- Mobile overlay -->
+    <div data-sidebar-overlay class="fixed inset-0 z-40 hidden bg-black/50 lg:hidden"></div>
+    
+    <aside
+      id="app-sidebar"
+      data-sidebar
+      aria-label="Primary"
+      class="fixed left-0 top-0 z-50 flex h-screen w-[264px] -translate-x-full flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-300 lg:translate-x-0"
+    >
+      <!-- Brand -->
+      <div class="flex h-16 items-center justify-between gap-3 border-b border-sidebar-border px-4">
+        <a href="index.html" data-brand-link class="flex items-center gap-2.5">
+          <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
+            <i data-lucide="users-round" class="size-4 text-sidebar-primary-foreground"></i>
+          </span>
+          <span data-brand-text class="flex flex-col leading-none">
+            <span class="text-sm font-bold tracking-tight text-sidebar-foreground">User Management</span>
+            <span class="text-[10px] font-medium uppercase tracking-widest text-sidebar-foreground/75">Admin Suite</span>
+          </span>
+        </a>
+        <button data-sidebar-close class="flex size-7 items-center justify-center rounded-md text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden" aria-label="Close menu">
+          <i data-lucide="x" class="size-4"></i>
+        </button>
+      </div>
+    
+      <!-- Collapse-to-rail toggle (desktop) -->
+      <button data-sidebar-collapse aria-label="Collapse sidebar" aria-expanded="true" class="absolute -end-3 top-[4.5rem] z-50 hidden size-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/75 shadow-sm transition-colors hover:text-sidebar-foreground lg:flex">
+        <i data-lucide="chevrons-left" data-collapse-icon class="size-3.5 transition-transform"></i>
+      </button>
+    
+      <!-- Nav -->
+      <nav class="flex-1 space-y-4 overflow-y-auto px-3 py-4" data-nav>
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Dashboards</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="index.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="layout-dashboard" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Overview</span></a></li>
+            <li><a href="analytics.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="chart-line" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Analytics</span></a></li>
+            <li><a href="security.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="shield-check" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Security</span></a></li>
+            <li><a href="onboarding.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user-round-plus" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Onboarding</span></a></li>
+            <li><a href="builder.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="component" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Builder</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Users</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="users.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="users" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>All Users</span></a></li>
+            <li><a href="add-user.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user-plus" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Add User</span></a></li>
+            <li><a href="invitations.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="mail-plus" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Invitations</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Access Control</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="admins.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user-cog" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Admins</span></a></li>
+            <li><a href="roles.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="key-round" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Roles</span></a></li>
+            <li><a href="permissions.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="lock" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Permissions</span></a></li>
+            <li><a href="modules.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="blocks" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Modules</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Organization</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="teams.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="users-round" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Teams</span></a></li>
+            <li><a href="groups.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="boxes" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Groups</span></a></li>
+            <li><a href="sessions.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="monitor-smartphone" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Sessions</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Monitoring</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="audit-log.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="scroll-text" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Audit Log</span></a></li>
+            <li><a href="reports.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="chart-column" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Reports</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Billing</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="billing.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="credit-card" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Billing</span></a></li>
+            <li><a href="subscriptions.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="repeat" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Subscriptions</span></a></li>
+            <li><a href="plans.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="layers" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Plans</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Apps</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="mail.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="mail" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Mailbox</span></a></li>
+            <li><a href="messages.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="message-square" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Messages</span></a></li>
+            <li><a href="calendar.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="calendar-days" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Calendar</span></a></li>
+            <li><a href="tasks.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="square-kanban" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Task Board</span></a></li>
+            <li><a href="files.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="image" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Brand Assets</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>UI Kit</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="ui-components.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="component" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Components</span></a></li>
+            <li><a href="ui-forms.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="square-check" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Forms</span></a></li>
+            <li><a href="ui-tables.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="table" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Tables</span></a></li>
+            <li><a href="ui-charts.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="chart-pie" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Charts</span></a></li>
+            <li><a href="ui-typography.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="type" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Typography</span></a></li>
+            <li><a href="ui-icons.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="sparkles" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Icons</span></a></li>
+          </ul>
+        </div>
+    
+        <div>
+          <button type="button" data-group-toggle class="flex w-full items-center justify-between rounded-md px-3 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/75 hover:text-sidebar-foreground"><span>Account</span><i data-lucide="chevron-down" data-chevron class="size-3.5 shrink-0 transition-transform"></i></button>
+          <ul class="space-y-0.5">
+            <li><a href="profile.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Profile</span></a></li>
+            <li><a href="settings.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="settings" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Settings</span></a></li>
+            <li><a href="api-keys.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="key" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>API Keys</span></a></li>
+            <li><a href="help.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="life-buoy" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Help Center</span></a></li>
+            <li><a href="docs.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="book-open" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Documentation</span></a></li>
+          </ul>
+        </div>
+      </nav>
+    
+      <!-- Signed-in user -->
+      <div class="border-t border-sidebar-border p-3">
+        <a href="profile.html" data-user-row class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent/60">
+          <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/12 text-xs font-semibold text-sidebar-primary-text">AM</span>
+          <span data-user-meta class="min-w-0 flex-1 leading-tight">
+            <span class="block truncate text-sm font-medium text-sidebar-foreground">Amara Okonkwo</span>
+            <span class="block truncate text-xs text-sidebar-foreground/75">Workspace Owner</span>
+          </span>
+          <i data-lucide="chevron-right" data-user-meta class="size-4 shrink-0 text-sidebar-foreground/40"></i>
+        </a>
+      </div>
+    </aside>
+    <div data-app-shell class="flex min-h-screen min-w-0 flex-col lg:ms-[264px]">
+      <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6">
+        <div class="flex items-center gap-3">
+          <button data-sidebar-open aria-controls="app-sidebar" aria-expanded="false" class="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden" aria-label="Open menu">
+            <i data-lucide="menu" class="size-5"></i>
+          </button>
+          <button data-cmdk-open type="button" class="hidden h-9 w-64 items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 sm:flex lg:w-72">
+            <i data-lucide="search" class="size-4 text-muted-foreground/70"></i>
+            <span class="flex-1 text-start">Search users, roles, pages…</span>
+            <kbd class="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
+          </button>
+        </div>
+      
+        <div class="flex items-center gap-2">
+          <a href="add-user.html" class="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex">
+            <i data-lucide="user-plus" class="size-4"></i> Invite user
+          </a>
+      
+          <button data-theme-toggle class="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Toggle theme">
+            <i data-lucide="moon" class="size-4 dark:hidden"></i>
+            <i data-lucide="sun" class="hidden size-4 dark:block"></i>
+          </button>
+      
+          <!-- Appearance customizer -->
+          <div class="relative" data-customizer>
+            <button data-customizer-btn aria-label="Customize appearance" aria-expanded="false" class="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+              <i data-lucide="palette" class="size-4"></i>
+            </button>
+            <div data-customizer-panel class="absolute end-0 z-40 mt-2 hidden w-64 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-lg">
+              <p class="mb-1.5 text-xs font-semibold text-muted-foreground">Theme</p>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" data-set-theme="light" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="sun" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Light</span></button>
+                <button type="button" data-set-theme="dark" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="moon" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Dark</span></button>
+                <button type="button" data-set-theme="system" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="monitor" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">System</span></button>
+              </div>
+              <p class="mb-1.5 mt-3 text-xs font-semibold text-muted-foreground">Color</p>
+              <div class="grid grid-cols-4 gap-1.5">
+                <button type="button" data-set-color="violet" aria-label="Violet" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.24 293)"></span></button>
+                <button type="button" data-set-color="blue" aria-label="Blue" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.19 262)"></span></button>
+                <button type="button" data-set-color="teal" aria-label="Teal" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.13 175)"></span></button>
+                <button type="button" data-set-color="rose" aria-label="Rose" class="flex items-center justify-center rounded-lg border-2 border-border p-2 transition-all hover:border-primary/30"><span class="size-4 rounded-full" style="background-color:oklch(0.589 0.16 357)"></span></button>
+              </div>
+              <p class="mb-1.5 mt-3 text-xs font-semibold text-muted-foreground">Density</p>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" data-set-density="compact" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="rows-3" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Compact</span></button>
+                <button type="button" data-set-density="comfortable" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="rows-4" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Cozy</span></button>
+                <button type="button" data-set-density="spacious" class="flex flex-col items-center gap-1 rounded-lg border-2 border-border p-2 text-[11px] font-medium transition-all hover:border-primary/30"><i data-lucide="stretch-horizontal" data-appearance-tint class="size-4 text-muted-foreground"></i><span data-appearance-tint class="text-muted-foreground">Roomy</span></button>
+              </div>
+            </div>
+          </div>
+      
+          <a href="notifications.html" class="relative flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Notifications">
+            <i data-lucide="bell" class="size-4"></i>
+            <span class="absolute end-1.5 top-1.5 size-1.5 rounded-full bg-destructive"></span>
+          </a>
+          <a href="profile.html" class="ms-1 flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary-text" aria-label="Profile">AM</a>
+        </div>
+      </header>
+      <main id="main-content" tabindex="-1" class="min-w-0 flex-1 p-4 sm:p-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-foreground">Groups</h1>
+            <p class="mt-1 text-sm text-muted-foreground">Cross-team collections that grant extra access. Groups add permissions — they never take them away.</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" data-toast="Directory sync started" class="inline-flex items-center gap-2 rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"><i data-lucide="refresh-cw" class="size-4"></i> Sync now</button>
+            <button type="button" data-toast="Group builder would open here" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"><i data-lucide="plus" class="size-4"></i> New group</button>
+          </div>
+        </div>
+
+        <!-- Group types -->
+        <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div class="rounded-xl border border-border bg-card p-4">
+            <div class="flex items-start gap-3">
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-[18px]" style="color:var(--chart-5-text)"></i></span>
+              <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-foreground">Static</p><p class="text-xs text-muted-foreground">Membership edited by hand</p></div>
+              <p class="font-mono text-xl font-bold tabular-nums text-foreground">7</p>
+            </div>
+          </div>
+          <div class="rounded-xl border border-border bg-card p-4">
+            <div class="flex items-start gap-3">
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="workflow" class="size-[18px]" style="color:var(--chart-1-text)"></i></span>
+              <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-foreground">Dynamic</p><p class="text-xs text-muted-foreground">Membership from a rule, re-evaluated hourly</p></div>
+              <p class="font-mono text-xl font-bold tabular-nums text-foreground">6</p>
+            </div>
+          </div>
+          <div class="rounded-xl border border-border bg-card p-4">
+            <div class="flex items-start gap-3">
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="refresh-cw" class="size-[18px]" style="color:var(--chart-2-text)"></i></span>
+              <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-foreground">Synced</p><p class="text-xs text-muted-foreground">Mirrored from your identity provider</p></div>
+              <p class="font-mono text-xl font-bold tabular-nums text-foreground">3</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sync status -->
+        <div class="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--success) 14%, transparent)"><i data-lucide="circle-check-big" class="size-[18px]" style="color:var(--success-text)"></i></span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-foreground">Okta sync healthy</p>
+            <p class="text-xs text-muted-foreground">Last run 14 minutes ago · 331 members reconciled across 3 synced groups · 0 conflicts</p>
+          </div>
+          <a href="audit-log.html" class="shrink-0 rounded-lg border border-input px-4 py-2 text-sm font-medium transition-colors hover:bg-accent">Sync history</a>
+        </div>
+
+        <!-- Groups table -->
+        <div class="mt-4 rounded-xl border border-border bg-card">
+          <table data-datatable data-search="Search groups…" data-per-page="10" data-facets="Type,Source,Owner" data-export="groups" class="min-w-full text-sm">
+            <thead>
+              <tr>
+                <th class="px-4 py-2.5">Group</th>
+                <th class="px-4 py-2.5">Type</th>
+                <th class="px-4 py-2.5">Source</th>
+                <th class="px-4 py-2.5">Members</th>
+                <th class="px-4 py-2.5">Grants</th>
+                <th class="px-4 py-2.5">Owner</th>
+                <th class="px-4 py-2.5">Updated</th>
+                <th class="px-4 py-2.5 text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="workflow" class="size-4" style="color:var(--chart-1-text)"></i></span><span><span class="block font-medium text-foreground">All hands</span><span class="block text-xs text-muted-foreground">Everyone in the workspace</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent);color:var(--chart-1-text)">Dynamic</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Rule</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">8,942</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Announcements</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Amara Okonkwo</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 19, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of All hands would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of All hands"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit All hands"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="All hands deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete All hands"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><span><span class="block font-medium text-foreground">EMEA Escalations</span><span class="block text-xs text-muted-foreground">Tier-3 support across EMEA</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent);color:var(--chart-5-text)">Static</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Manual</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">14</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Escalation queue, Refunds</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Sofia Oliveira</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 18, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of EMEA Escalations would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of EMEA Escalations"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit EMEA Escalations"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="EMEA Escalations deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete EMEA Escalations"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><span><span class="block font-medium text-foreground">Billing Console Access</span><span class="block text-xs text-muted-foreground">Read access to invoices and plans</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent);color:var(--chart-5-text)">Static</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Manual</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">9</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Billing (view)</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Noah Whitfield</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 17, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Billing Console Access would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Billing Console Access"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Billing Console Access"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Billing Console Access deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Billing Console Access"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="refresh-cw" class="size-4" style="color:var(--chart-2-text)"></i></span><span><span class="block font-medium text-foreground">Engineering — Platform</span><span class="block text-xs text-muted-foreground">Core platform squad</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent);color:var(--chart-2-text)">Synced</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Okta</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">148</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Production deploy</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Zara Haddad</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 19, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Engineering — Platform would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Engineering — Platform"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Engineering — Platform"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Engineering — Platform deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Engineering — Platform"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="refresh-cw" class="size-4" style="color:var(--chart-2-text)"></i></span><span><span class="block font-medium text-foreground">Engineering — Mobile</span><span class="block text-xs text-muted-foreground">iOS and Android squads</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent);color:var(--chart-2-text)">Synced</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Okta</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">96</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Release console</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Zara Haddad</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 19, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Engineering — Mobile would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Engineering — Mobile"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Engineering — Mobile"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Engineering — Mobile deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Engineering — Mobile"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="workflow" class="size-4" style="color:var(--chart-1-text)"></i></span><span><span class="block font-medium text-foreground">On-call</span><span class="block text-xs text-muted-foreground">Current rotation, refreshed hourly</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent);color:var(--chart-1-text)">Dynamic</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Rule</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">12</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Paging, Incident console</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Tomas Berg</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 19, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of On-call would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of On-call"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit On-call"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="On-call deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete On-call"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="workflow" class="size-4" style="color:var(--chart-1-text)"></i></span><span><span class="block font-medium text-foreground">Contractors</span><span class="block text-xs text-muted-foreground">External staff, time-boxed</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent);color:var(--chart-1-text)">Dynamic</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Rule</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">64</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">No export, no API</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Lucia Ferrero</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 16, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Contractors would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Contractors"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Contractors"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Contractors deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Contractors"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><span><span class="block font-medium text-foreground">Brand assets</span><span class="block text-xs text-muted-foreground">Logo and template library</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent);color:var(--chart-5-text)">Static</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Manual</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">212</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Brand drive (edit)</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Beatriz Correia</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 14, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Brand assets would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Brand assets"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Brand assets"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Brand assets deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Brand assets"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><span><span class="block font-medium text-foreground">Security champions</span><span class="block text-xs text-muted-foreground">One per team, quarterly rotation</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent);color:var(--chart-5-text)">Static</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Manual</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">8</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Risk console (view)</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Tomas Berg</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 12, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Security champions would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Security champions"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Security champions"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Security champions deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Security champions"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><span><span class="block font-medium text-foreground">Finance approvers</span><span class="block text-xs text-muted-foreground">Purchase approval chain</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent);color:var(--chart-5-text)">Static</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Manual</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">11</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Approvals</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Lucia Ferrero</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 11, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Finance approvers would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Finance approvers"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Finance approvers"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Finance approvers deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Finance approvers"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="refresh-cw" class="size-4" style="color:var(--chart-2-text)"></i></span><span><span class="block font-medium text-foreground">Data warehouse</span><span class="block text-xs text-muted-foreground">Analytics read access</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent);color:var(--chart-2-text)">Synced</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Okta</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">87</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Warehouse (read)</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Noah Whitfield</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 10, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Data warehouse would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Data warehouse"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Data warehouse"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Data warehouse deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Data warehouse"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="workflow" class="size-4" style="color:var(--chart-1-text)"></i></span><span><span class="block font-medium text-foreground">New starters</span><span class="block text-xs text-muted-foreground">Joined in the last 30 days</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent);color:var(--chart-1-text)">Dynamic</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Rule</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">128</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Onboarding checklist</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Priya Raghavan</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 19, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of New starters would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of New starters"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit New starters"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="New starters deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete New starters"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="workflow" class="size-4" style="color:var(--chart-1-text)"></i></span><span><span class="block font-medium text-foreground">Leavers — pending</span><span class="block text-xs text-muted-foreground">Offboarding in flight</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent);color:var(--chart-1-text)">Dynamic</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Rule</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">5</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Read-only everywhere</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Priya Raghavan</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 19, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Leavers — pending would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Leavers — pending"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Leavers — pending"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Leavers — pending deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Leavers — pending"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><span><span class="block font-medium text-foreground">Service accounts</span><span class="block text-xs text-muted-foreground">Non-human identities</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent);color:var(--chart-5-text)">Static</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Manual</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">27</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">API only</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Tomas Berg</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 09, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Service accounts would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Service accounts"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Service accounts"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Service accounts deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Service accounts"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="boxes" class="size-4" style="color:var(--chart-5-text)"></i></span><span><span class="block font-medium text-foreground">Beta testers</span><span class="block text-xs text-muted-foreground">Opt-in to unreleased features</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent);color:var(--chart-5-text)">Static</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Manual</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">341</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Feature flags</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Wei Zhang</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 07, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of Beta testers would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of Beta testers"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit Beta testers"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="Beta testers deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete Beta testers"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="workflow" class="size-4" style="color:var(--chart-1-text)"></i></span><span><span class="block font-medium text-foreground">APAC</span><span class="block text-xs text-muted-foreground">Asia-Pacific staff</span></span></div></td>
+                    <td class="px-4 py-2.5"><span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent);color:var(--chart-1-text)">Dynamic</span></td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Rule</td>
+                    <td class="px-4 py-2.5 font-mono tabular-nums text-foreground">1,720</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Regional content</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Amara Okonkwo</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">Aug 05, 2026</td>
+                    <td class="px-4 py-2.5 text-end"><div class="inline-flex items-center gap-1"><button type="button" data-toast="Members of APAC would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="View members of APAC"><i data-lucide="users" class="size-3.5"></i></button><button type="button" data-toast="Group editor would open here" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Edit APAC"><i data-lucide="pencil" class="size-3.5"></i></button><button type="button" data-toast="APAC deleted" class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive-text" aria-label="Delete APAC"><i data-lucide="trash-2" class="size-3.5"></i></button></div></td>
+                  </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+      <footer class="border-t border-border px-4 py-4 text-xs text-muted-foreground sm:px-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p>User Management — Admin Dashboard. Demo data is fictional.</p>
+          <p>Built with Vite, Tailwind CSS v4, and vanilla JavaScript.</p>
+        </div>
+      </footer>
+    </div>
+  </body>
+
+<!-- Mirrored from demo.dashboardpack.com/user-management-html/groups.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 24 Aug 2026 09:23:26 GMT -->
+</html>

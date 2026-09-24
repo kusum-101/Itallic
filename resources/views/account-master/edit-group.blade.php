@@ -1,0 +1,75 @@
+@extends('layouts.app')
+
+@section('title', 'Edit Group')
+
+@section('content')
+
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-foreground">Edit Group</h1>
+    <p class="mt-1 text-sm text-muted-foreground">Update this group's details.</p>
+  </div>
+
+  <form action="{{ route('group.update', $group->id) }}" method="POST" class="mt-6 max-w-lg space-y-4 rounded-xl border border-border bg-card p-6">
+    @csrf
+    @method('PUT')
+
+    <div>
+      <label for="name" class="block text-sm font-medium text-foreground">Group Name</label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        value="{{ old('name', $group->name) }}"
+        required
+        class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring/20">
+      @error('name')
+        <p class="mt-1 text-sm text-danger">{{ $message }}</p>
+      @enderror
+    </div>
+
+    <div>
+      <label for="parent_id" class="block text-sm font-medium text-foreground">Under</label>
+      <select id="parent_id" name="parent_id" class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
+        <option value="">Primary (top-level group)</option>
+        @foreach($parentOptions as $option)
+          <option value="{{ $option->id }}" @selected(old('parent_id', $group->parent_id) == $option->id)>{{ $option->name }}</option>
+        @endforeach
+      </select>
+      @error('parent_id')
+        <p class="mt-1 text-sm text-danger">{{ $message }}</p>
+      @enderror
+
+      @if(is_null($group->parent_id))
+        <p class="mt-1 text-xs text-muted-foreground">This is a top-level (Primary) group, so its nature is set below.</p>
+      @else
+        <p class="mt-1 text-xs text-muted-foreground">The group's nature (Assets/Liabilities/Income/Expenses) is picked up automatically from the group you select here.</p>
+      @endif
+    </div>
+
+    @if(is_null($group->parent_id))
+    <div>
+      <label for="nature" class="block text-sm font-medium text-foreground">Nature of Group</label>
+      <select id="nature" name="nature" required class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
+        <option value="">Select nature</option>
+        <option value="Assets" @selected(old('nature', $group->nature) == 'Assets')>Assets</option>
+        <option value="Liabilities" @selected(old('nature', $group->nature) == 'Liabilities')>Liabilities</option>
+        <option value="Income" @selected(old('nature', $group->nature) == 'Income')>Income</option>
+        <option value="Expenses" @selected(old('nature', $group->nature) == 'Expenses')>Expenses</option>
+      </select>
+      @error('nature')
+        <p class="mt-1 text-sm text-danger">{{ $message }}</p>
+      @enderror
+    </div>
+    @endif
+
+    <div class="flex gap-2 pt-2">
+      <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+        Save
+      </button>
+      <a href="{{ route('list-group') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+        Cancel
+      </a>
+    </div>
+  </form>
+
+@endsection

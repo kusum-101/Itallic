@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Group extends Model
+{
+    protected $guarded = [];
+
+    // The company this group belongs to
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    // The group this one sits under (null for a top-level/primary group)
+    public function parent()
+    {
+        return $this->belongsTo(Group::class, 'parent_id');
+    }
+
+    // The sub-groups that sit under this group
+    public function children()
+    {
+        return $this->hasMany(Group::class, 'parent_id');
+    }
+
+    /**
+     * Create the default groups (Tally's standard chart of groups) for a
+     * newly created company. Does nothing if the company already has groups.
+     */
+    public static function seedDefaults($companyId)
+    {
+        if (self::where('company_id', $companyId)->exists()) {
+            return;
+        }
+
+        // Top-level groups: name => nature
+        $primaryGroups = [
+            'Capital Account'        => 'Liabilities',
+            'Current Assets'         => 'Assets',
+            'Current Liabilities'    => 'Liabilities',
+            'Direct Expenses'        => 'Expenses',
+            'Direct Incomes'         => 'Income',
+            'Fixed Assets'           => 'Assets',
+            'Indirect Expenses'      => 'Expenses',
+            'Indirect Incomes'       => 'Income',
+            'Investments'            => 'Assets',
+            'Loans (Liability)'      => 'Liabilities',
+            'Misc. Expenses (Asset)' => 'Assets',
+            'Purchase Accounts'      => 'Expenses',
+            'Sales Accounts'         => 'Income',
+            'Suspense A/c'           => 'Liabilities',
+        ];
+
+        // Sub-groups: name => name of the parent group above
+        $subGroups = [
+            'Reserves & Surplus'       => 'Capital Account',
+            'Bank Accounts'            => 'Current Assets',
+            'Cash-in-Hand'             => 'Current Assets',
+            'Deposits (Asset)'         => 'Current Assets',
+            'Loans & Advances (Asset)' => 'Current Assets',
+            'Stock-in-Hand'            => 'Current Assets',
+            'Sundry Debtors'           => 'Current Assets',
+            'Duties & Taxes'           => 'Current Liabilities',
+            'Provisions'               => 'Current Liabilities',
+            'Sundry Creditors'         => 'Current Liabilities',
+            'Bank OD A/c'              => 'Loans (Liability)',
+            'Secured Loans'            => 'Loans (Liability)',
+            'Unsecured Loans'          => 'Loans (Liability)',
+        ];
+
+        // Insert the top-level groups first and remember each one's id
+        $parentIds = [];
+
+        foreach ($primaryGroups as $name => $nature) {
+            $group = self::create([
+                'company_id' => $companyId,
+                'parent_id'  => null,
+                'name'       => $name,
+                'nature'     => $nature,
+                'is_primary' => true,
+            ]);
+
+            $parentIds[$name] = $group->id;
+        }
+
+        // Now insert the sub-groups, pointing each one at its parent's id
+        foreach ($subGroups as $name => $parentName) {
+            self::create([
+                'company_id' => $companyId,
+                'parent_id'  => $parentIds[$parentName],
+                'name'       => $name,
+                'nature'     => $primaryGroups[$parentName],
+                'is_primary' => true,
+            ]);
+        }
+    }
+}
