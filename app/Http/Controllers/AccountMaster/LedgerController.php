@@ -159,6 +159,14 @@ class LedgerController extends Controller
     {
         $isParty = $group->isPartyGroup();
 
+        $gstNo = $request->gst_no ? strtoupper($request->gst_no) : null;
+        $panNo = $request->pan_no ? strtoupper($request->pan_no) : null;
+
+        // Characters 3 to 12 of a GST No. are the PAN, so a full GST No. decides the PAN
+        if ($gstNo && strlen($gstNo) == 15) {
+            $panNo = substr($gstNo, 2, 10);
+        }
+
         return [
             'group_id'        => $group->id,
             'name'            => $request->name,
@@ -166,8 +174,8 @@ class LedgerController extends Controller
             // Party form
             'address'         => $isParty ? $request->address : null,
             'contact'         => $isParty ? $request->contact : null,
-            'gst_no'          => $isParty && $request->gst_no ? strtoupper($request->gst_no) : null,
-            'pan_no'          => $isParty && $request->pan_no ? strtoupper($request->pan_no) : null,
+            'gst_no'          => $isParty ? $gstNo : null,
+            'pan_no'          => $isParty ? $panNo : null,
 
             // Other form
             'gst_percent'     => $isParty ? null : $request->gst_percent,

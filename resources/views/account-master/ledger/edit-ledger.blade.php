@@ -95,6 +95,7 @@
       @error('pan_no')
         <p class="mt-1 text-sm text-destructive-text">{{ $message }}</p>
       @enderror
+      <p class="mt-1 text-xs text-muted-foreground">Filled automatically from GST No.</p>
     </div>
 
     <!-- Other fields (data-other-field): shown for every other group (Sales, Purchase, Expenses etc.) -->
@@ -204,6 +205,32 @@
 
     // Run once on page load too (e.g. when the form comes back with an error)
     showFields();
+  })();
+
+  // PAN No. from GST No.: characters 3 to 12 of a GST No. are the PAN
+  // (e.g. 09AATCM5105A1ZL -> AATCM5105A). Once a full GST No. is typed,
+  // PAN is filled in and locked (readonly), so it can't be changed by mistake.
+  (function() {
+    var gstInput = document.getElementById("gst_no");
+    var panInput = document.getElementById("pan_no");
+
+    function fillPan() {
+      var gst = gstInput.value.trim().toUpperCase();
+
+      if (gst.length === 15) {
+        panInput.value = gst.substring(2, 12);
+        panInput.readOnly = true;
+        panInput.classList.add("opacity-70", "cursor-not-allowed");
+      } else {
+        panInput.readOnly = false;
+        panInput.classList.remove("opacity-70", "cursor-not-allowed");
+      }
+    }
+
+    gstInput.addEventListener("input", fillPan);
+
+    // Run once on page load too (e.g. an existing ledger that already has a GST No.)
+    fillPan();
   })();
 </script>
 @endpush
