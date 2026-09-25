@@ -101,6 +101,10 @@ class GroupController extends Controller
 
         $group = Group::where('company_id', $companyId)->findOrFail($id);
 
+        if ($group->is_primary) {
+            return redirect()->route('list-group')->with('error', 'Default groups cannot be edited.');
+        }
+
         // A group can't be placed under itself, so leave it out of the options
         $parentOptions = Group::where('company_id', $companyId)
             ->where('id', '!=', $group->id)
@@ -116,6 +120,10 @@ class GroupController extends Controller
         $companyId = session('company_id');
 
         $group = Group::where('company_id', $companyId)->findOrFail($id);
+
+        if ($group->is_primary) {
+            return redirect()->route('list-group')->with('error', 'Default groups cannot be edited.');
+        }
 
         $request->validate([
             'name' => [

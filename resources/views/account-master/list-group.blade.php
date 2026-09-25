@@ -92,6 +92,10 @@
 
           <!-- Options for this group: 3-line button opens a small menu -->
           <td class="px-4 py-3">
+            {{-- Default groups can't be edited, so they get no options menu --}}
+            @if($group->is_primary)
+            <span class="text-muted-foreground">-</span>
+            @else
             <div data-action-menu>
               <button type="button" data-action-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Actions" class="flex size-8 items-center justify-center rounded-lg border border-input text-foreground transition-colors hover:bg-accent">
                 <i data-lucide="menu" class="size-4"></i>
@@ -103,6 +107,7 @@
                 </a>
               </div>
             </div>
+            @endif
           </td>
         </tr>
         @empty
