@@ -1,0 +1,45 @@
+/* ===== Form grid =====
+   Puts form fields side by side:
+   mobile = 1 field per row, tablet = 2 per row, big screen = 4 per row.
+
+   <form class="form-grid">          -> the grid
+   <div class="col-2">               -> this field takes 2 columns
+   <div class="col-full">            -> this field takes the whole row
+*/
+.form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem 1.25rem;
+}
+
+.form-grid .col-full {
+  grid-column: 1 / -1;
+}
+
+/* Tablet and up: 2 fields per row */
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid .col-2 {
+    grid-column: span 2;
+  }
+}
+
+/* Big screen: 4 fields per row */
+@media (min-width: 1024px) {
+  .form-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ===== Mobile only =====
+   Shows something only on mobile (below 768px), hides it on bigger screens.
+   e.g. Logout / Switch Company in the sidebar, because on bigger screens
+   they are already in the header. */
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+}

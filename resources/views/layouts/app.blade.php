@@ -49,6 +49,8 @@
   </script>
   <script type="module" crossorigin src="{{ asset('assets/main-KQ41WFZu.js') }}"></script>
   <link rel="stylesheet" href="{{ asset('assets/main-BDUTwv5H.css') }}">
+  <!-- Our own small styles (e.g. form-grid for side-by-side form fields) -->
+  <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
   @stack('head')
 </head>
 

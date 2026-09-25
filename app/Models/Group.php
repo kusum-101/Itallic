@@ -26,6 +26,40 @@ class Group extends Model
         return $this->hasMany(Group::class, 'parent_id');
     }
 
+    // The ledgers that sit under this group
+    public function ledgers()
+    {
+        return $this->hasMany(Ledger::class);
+    }
+
+    // Default groups whose ledgers need party details (Address, Contact, GST No., PAN No.)
+    public const PARTY_GROUPS = [
+        'Capital Account',
+        'Loans (Liability)',
+        'Loans & Advances (Asset)',
+        'Secured Loans',
+        'Sundry Creditors',
+        'Sundry Debtors',
+        'Suspense A/c',
+        'Unsecured Loans',
+    ];
+
+    /**
+     * Does a ledger under this group need the party form?
+     * A custom group follows the default group it sits under, so we climb
+     * up through the parents until we reach a default group.
+     */
+    public function isPartyGroup()
+    {
+        $group = $this;
+
+        while (!$group->is_primary && $group->parent) {
+            $group = $group->parent;
+        }
+
+        return in_array($group->name, self::PARTY_GROUPS);
+    }
+
     /**
      * Create the default groups (Tally's standard chart of groups) for a
      * newly created company. Does nothing if the company already has groups.

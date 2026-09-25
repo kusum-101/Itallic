@@ -1,11 +1,11 @@
-<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6">
-  <div class="flex items-center gap-3">
+<header class="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6">
+  <div class="flex min-w-0 items-center gap-3">
     <button data-sidebar-open aria-controls="app-sidebar" aria-expanded="false" class="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden" aria-label="Open menu">
       <i data-lucide="menu" class="size-5"></i>
     </button>
-    <button data-cmdk-open type="button" class="hidden h-9 w-64 items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 sm:flex lg:w-72">
+    <button data-cmdk-open type="button" class="hidden h-9 w-64 min-w-0 items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 sm:flex lg:w-72">
       <i data-lucide="search" class="size-4 text-muted-foreground/70"></i>
-      <span class="flex-1 text-start">Search users, roles, pages…</span>
+      <span class="flex-1 truncate text-start">Search users, roles, pages…</span>
       <kbd class="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
     </button>
   </div>
@@ -17,14 +17,14 @@
     $headerCompanies = \App\Models\Company::where('user_id', session('user_id'))->get();
   @endphp
 
-  <div class="flex items-center gap-2">
+  <div class="flex shrink-0 items-center gap-2">
 
     @if($currentCompany)
     <span class="hidden text-sm font-medium text-foreground sm:inline">{{ $currentCompany->company_name }}</span>
     @endif
 
     @if($headerCompanies->count() >= 2)
-    <a href="{{ route('select-company') }}" class="hidden items-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent md:inline-flex">
+    <a href="{{ route('select-company') }}" class="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-input px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent md:inline-flex">
       <i data-lucide="repeat" class="size-4"></i>
       Switch Company
     </a>
@@ -35,7 +35,7 @@
 
       <button
         type="submit"
-        class="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex">
+        class="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex">
 
         <i data-lucide="user" class="size-4"></i>
         Logout

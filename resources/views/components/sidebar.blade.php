@@ -555,6 +555,19 @@
           <li><a href="{{ route('profile') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="user" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Profile</span></a></li>
           <li><a href="{{ route('settings') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="settings" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Settings</span></a></li>
 
+          {{-- Switch Company + Logout: only on mobile (mobile-only in public/css/custom.css),
+               because on bigger screens they are already in the header --}}
+          @if(\App\Models\Company::where('user_id', session('user_id'))->count() >= 2)
+          <li class="mobile-only"><a href="{{ route('select-company') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"><i data-lucide="repeat" class="size-[18px] shrink-0 text-sidebar-foreground/60"></i><span>Switch Company</span></a></li>
+          @endif
+
+          <li class="mobile-only">
+            <form action="{{ route('logout') }}" method="POST">
+              @csrf
+              <button type="submit" class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-destructive-text transition-colors hover:bg-sidebar-accent/60"><i data-lucide="log-out" class="size-[18px] shrink-0"></i><span>Logout</span></button>
+            </form>
+          </li>
+
         </ul>
       </div>
     </nav>

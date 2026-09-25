@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountMaster\GroupController;
+use App\Http\Controllers\AccountMaster\LedgerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MasterAdminController;
 use App\Http\Controllers\CredentialController;
@@ -45,12 +46,19 @@ Route::get('/group/{id}/edit', [GroupController::class, 'edit'])->name('group.ed
 Route::put('/group/{id}', [GroupController::class, 'update'])->name('group.update');
 Route::delete('/group/{id}', [GroupController::class, 'destroy'])->name('group.destroy');
 
+//ledger
+Route::get('/ledger', [LedgerController::class, 'create'])->name('ledger');
+Route::post('/ledger', [LedgerController::class, 'store'])->name('ledger.store');
+Route::get('/list-ledger', [LedgerController::class, 'index'])->name('list-ledger');
+Route::get('/ledger/{id}/edit', [LedgerController::class, 'edit'])->name('ledger.edit');
+Route::put('/ledger/{id}', [LedgerController::class, 'update'])->name('ledger.update');
+Route::delete('/ledger/{id}', [LedgerController::class, 'destroy'])->name('ledger.destroy');
+
 
 // sidebar & header pages (placeholder until each page is built)
 foreach ([
     // masters
     'alter', 'shipping-address', 'billing-address',
-    'list-ledger',
     'stock-group', 'stock-category', 'item', 'unit', 'godown', 'copy-allocation-details',
     'users', 'department', 'position',
     // vouchers

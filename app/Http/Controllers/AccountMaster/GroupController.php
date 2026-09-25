@@ -42,7 +42,7 @@ class GroupController extends Controller
         // Every group of this company, used to fill the "Under" filter dropdown
         $underOptions = Group::where('company_id', $companyId)->orderBy('name')->get();
 
-        return view('account-master.list-group', compact('user', 'groups', 'underOptions'));
+        return view('account-master.group.list-group', compact('user', 'groups', 'underOptions'));
     }
 
     // Add Group page: the form to create a new (custom) group
@@ -58,7 +58,7 @@ class GroupController extends Controller
 
         $parentOptions = Group::where('company_id', $companyId)->orderBy('name')->get();
 
-        return view('account-master.group', compact('user', 'parentOptions'));
+        return view('account-master.group.group', compact('user', 'parentOptions'));
     }
 
     // Save the new group
@@ -111,7 +111,7 @@ class GroupController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('account-master.edit-group', compact('user', 'group', 'parentOptions'));
+        return view('account-master.group.edit-group', compact('user', 'group', 'parentOptions'));
     }
 
     // Save changes to an existing group
@@ -164,6 +164,10 @@ class GroupController extends Controller
 
         if ($group->children()->exists()) {
             return redirect()->route('list-group')->with('error', 'Move or delete the sub-groups under this group first.');
+        }
+
+        if ($group->ledgers()->exists()) {
+            return redirect()->route('list-group')->with('error', 'Move or delete the ledgers under this group first.');
         }
 
         $group->delete();
