@@ -3,21 +3,15 @@
 use App\Http\Controllers\AccountMaster\GroupController;
 use App\Http\Controllers\AccountMaster\LedgerController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MasterAdminController;
 use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\CompanyController;
-
-//admin page
-Route::view('/', 'admin-management.master-admin-login');
-Route::post('/login-admin', [MasterAdminController::class, 'login']);
-Route::get('/dashboard', [MasterAdminController::class, 'showDashboard'])->name('dashboard');
-Route::get('/logout', [MasterAdminController::class, 'logout'])->name('logout');
-
+use App\Http\Controllers\LocationController;
 
 
 
 // frontent
+Route::view('/', 'home')->name('home');
 Route::view('/register', 'credential.user-register');
 Route::post('/register',[CredentialController::class, 'register'] );
 Route::get('/company', [CredentialController::class, 'company'])->name('company');
@@ -53,6 +47,10 @@ Route::get('/list-ledger', [LedgerController::class, 'index'])->name('list-ledge
 Route::get('/ledger/{id}/edit', [LedgerController::class, 'edit'])->name('ledger.edit');
 Route::put('/ledger/{id}', [LedgerController::class, 'update'])->name('ledger.update');
 Route::delete('/ledger/{id}', [LedgerController::class, 'destroy'])->name('ledger.destroy');
+
+// District / City dropdowns of the ledger address fields (filled after picking a State / District)
+Route::get('/districts/{stateId}', [LocationController::class, 'districts'])->whereNumber('stateId')->name('districts');
+Route::get('/cities/{districtId}', [LocationController::class, 'cities'])->whereNumber('districtId')->name('cities');
 
 
 // sidebar & header pages (placeholder until each page is built)

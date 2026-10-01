@@ -9,8 +9,9 @@
     <p class="mt-1 text-sm text-muted-foreground">Update this ledger's details.</p>
   </div>
 
-  {{-- form-grid (public/css/custom.css): 1 field per row on mobile, 2 on tablet, 4 on big screens --}}
-  <form action="{{ route('ledger.update', $ledger->id) }}" method="POST" class="form-grid mt-6 rounded-xl border border-border bg-card p-6">
+  {{-- form-grid (public/css/custom.css): 1 field per row on mobile, 2 on tablet, 4 on big screens.
+       data-enter-next (layouts/app): Enter moves to the next field instead of saving --}}
+  <form action="{{ route('ledger.update', $ledger->id) }}" method="POST" data-enter-next class="form-grid mt-6 rounded-xl border border-border bg-card p-6">
     @csrf
     @method('PUT')
 
@@ -154,18 +155,8 @@
       @enderror
     </div>
 
-    <!-- Address: party field, takes the whole row -->
-    <div data-party-field class="col-full hidden">
-      <label for="address" class="block text-sm font-medium text-foreground">Address</label>
-      <textarea
-        id="address"
-        name="address"
-        rows="3"
-        class="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring/20">{{ old('address', $ledger->address) }}</textarea>
-      @error('address')
-        <p class="mt-1 text-sm text-destructive-text">{{ $message }}</p>
-      @enderror
-    </div>
+    <!-- Billing / Shipping addresses (party groups only) -->
+    @include('account-master.ledger.addresses')
 
     <div class="col-full flex gap-2 pt-2">
       <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">

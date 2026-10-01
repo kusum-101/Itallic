@@ -12,7 +12,8 @@
       <p class="mt-1 text-sm text-muted-foreground">Create a new group under an existing one.</p>
     </div>
 
-    <form action="{{ route('group.store') }}" method="POST" class="mt-6 space-y-4 rounded-xl border border-border bg-card p-6">
+    {{-- data-enter-next (layouts/app): Enter moves to the next field instead of saving --}}
+    <form action="{{ route('group.store') }}" method="POST" data-enter-next class="mt-6 space-y-4 rounded-xl border border-border bg-card p-6">
       @csrf
 
       <div>

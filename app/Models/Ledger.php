@@ -19,4 +19,10 @@ class Ledger extends Model
     {
         return $this->belongsTo(Group::class);
     }
+
+    // The billing and shipping addresses of this ledger
+    public function addresses()
+    {
+        return $this->hasMany(LedgerAddress::class);
+    }
 }

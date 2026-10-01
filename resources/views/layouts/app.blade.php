@@ -122,6 +122,31 @@
     })();
   </script>
 
+  <!-- Forms with data-enter-next: Enter moves to the next field (like Tally) instead of saving the form.
+       The form is saved only with its Save button. Enter in a textarea still adds a new line. -->
+  <script>
+    document.addEventListener("keydown", function(e) {
+      if (e.key !== "Enter" || e.shiftKey || e.ctrlKey || e.altKey) return;
+
+      var field = e.target;
+      var form = field.closest && field.closest("form[data-enter-next]");
+      if (!form || !field.matches("input, select")) return;
+
+      e.preventDefault();
+
+      // Visible, editable fields and buttons of the form, in page order
+      var fields = Array.prototype.filter.call(
+        form.querySelectorAll("input, select, textarea, button"),
+        function(el) {
+          return el.type !== "hidden" && !el.disabled && !el.readOnly && el.offsetParent !== null;
+        }
+      );
+
+      var next = fields[fields.indexOf(field) + 1];
+      if (next) next.focus();
+    });
+  </script>
+
   @stack('scripts')
 </body>
 

@@ -5,9 +5,12 @@ namespace App\Http\Controllers\AccountMaster;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Ledger;
+use App\Models\State;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class LedgerController extends Controller
 {
@@ -52,7 +55,13 @@ class LedgerController extends Controller
 
         $groupOptions = Group::where('company_id', $companyId)->orderBy('name')->get();
 
-        return view('account-master.ledger.ledger', compact('user', 'groupOptions'));
+        // Address fields: empty billing, shipping "Same as Billing" ticked
+        $states = State::list();
+        $billing = [];
+        $shipping = [];
+        $sameAsBilling = true;
+
+        return view('account-master.ledger.ledger', compact('user', 'groupOptions', 'states', 'billing', 'shipping', 'sameAsBilling'));
     }
 
     // Save the new ledger
@@ -66,7 +75,6 @@ class LedgerController extends Controller
                 Rule::unique('ledgers')->where('company_id', $companyId),
             ],
             'group_id'        => 'required|exists:groups,id',
-            'address'         => 'nullable|string',
             'contact'         => 'nullable|string|max:255',
             'gst_no'          => 'nullable|string|size:15',
             'pan_no'          => 'nullable|string|size:10',
@@ -80,10 +88,17 @@ class LedgerController extends Controller
 
         $group = Group::where('company_id', $companyId)->findOrFail($request->group_id);
 
-        Ledger::create(array_merge(
-            ['company_id' => $companyId],
-            $this->ledgerData($request, $group)
-        ));
+        $addresses = $this->addressRows($request, $group, $companyId);
+
+        // Ledger and its addresses are saved together: if one fails, nothing is saved
+        DB::transaction(function () use ($request, $group, $companyId, $addresses) {
+            $ledger = Ledger::create(array_merge(
+                ['company_id' => $companyId],
+                $this->ledgerData($request, $group)
+            ));
+
+            $ledger->addresses()->createMany($addresses);
+        });
 
         return redirect()->route('list-ledger')->with('success', 'Ledger added successfully.');
     }
@@ -99,11 +114,31 @@ class LedgerController extends Controller
 
         $companyId = session('company_id');
 
-        $ledger = Ledger::where('company_id', $companyId)->findOrFail($id);
+        $ledger = Ledger::where('company_id', $companyId)->with('addresses')->findOrFail($id);
 
         $groupOptions = Group::where('company_id', $companyId)->orderBy('name')->get();
 
-        return view('account-master.ledger.edit-ledger', compact('user', 'ledger', 'groupOptions'));
+        // Saved addresses for the address fields
+        $states = State::list();
+        $fields = ['address', 'state_id', 'district_id', 'city', 'pin_code'];
+
+        $billingRow = $ledger->addresses->firstWhere('type', 'Billing');
+        $billing = $billingRow ? $billingRow->only($fields) : [];
+
+        $shipping = $ledger->addresses->where('type', 'Shipping')
+            ->map(fn ($row) => $row->only($fields))
+            ->values()
+            ->all();
+
+        // "Same as Billing" is ticked when there is no shipping address yet,
+        // or the only one is a copy of the billing address
+        $sameAsBilling = !$shipping || (count($shipping) == 1 && $billing == $shipping[0]);
+
+        if ($sameAsBilling) {
+            $shipping = [];
+        }
+
+        return view('account-master.ledger.edit-ledger', compact('user', 'ledger', 'groupOptions', 'states', 'billing', 'shipping', 'sameAsBilling'));
     }
 
     // Save changes to an existing ledger
@@ -119,7 +154,6 @@ class LedgerController extends Controller
                 Rule::unique('ledgers')->where('company_id', $companyId)->ignore($ledger->id),
             ],
             'group_id'        => 'required|exists:groups,id',
-            'address'         => 'nullable|string',
             'contact'         => 'nullable|string|max:255',
             'gst_no'          => 'nullable|string|size:15',
             'pan_no'          => 'nullable|string|size:10',
@@ -133,7 +167,15 @@ class LedgerController extends Controller
 
         $group = Group::where('company_id', $companyId)->findOrFail($request->group_id);
 
-        $ledger->update($this->ledgerData($request, $group));
+        $addresses = $this->addressRows($request, $group, $companyId);
+
+        // Old addresses are replaced by the ones in the form, together with the ledger
+        DB::transaction(function () use ($request, $group, $ledger, $addresses) {
+            $ledger->update($this->ledgerData($request, $group));
+
+            $ledger->addresses()->delete();
+            $ledger->addresses()->createMany($addresses);
+        });
 
         return redirect()->route('list-ledger')->with('success', 'Ledger updated successfully.');
     }
@@ -152,7 +194,7 @@ class LedgerController extends Controller
 
     /**
      * The values to save for a ledger (used by both store and update).
-     * Party groups (Sundry Debtors etc.) keep Address, Contact, GST No. and PAN No.;
+     * Party groups (Sundry Debtors etc.) keep Contact, GST No. and PAN No.;
      * every other group keeps GST % and HSN Code. The other form's fields are left empty.
      */
     private function ledgerData(Request $request, Group $group)
@@ -171,8 +213,7 @@ class LedgerController extends Controller
             'group_id'        => $group->id,
             'name'            => $request->name,
 
-            // Party form
-            'address'         => $isParty ? $request->address : null,
+            // Party form (addresses are saved separately, see addressRows)
             'contact'         => $isParty ? $request->contact : null,
             'gst_no'          => $isParty ? $gstNo : null,
             'pan_no'          => $isParty ? $panNo : null,
@@ -185,5 +226,123 @@ class LedgerController extends Controller
             'opening_balance' => $request->opening_balance ?? 0,
             'opening_type'    => $request->opening_type,
         ];
+    }
+
+    /**
+     * Check the Billing / Shipping address fields and return the rows to save.
+     * Only party groups have addresses. A block left fully empty is skipped;
+     * a block that is partly filled must be filled completely. With "Same as
+     * Billing" ticked (or no shipping address filled), the billing address is
+     * saved as the shipping one too.
+     */
+    private function addressRows(Request $request, Group $group, $companyId)
+    {
+        if (!$group->isPartyGroup()) {
+            return [];
+        }
+
+        // The filled blocks: error key => [type, values]
+        $blocks = [];
+
+        $billing = $request->input('billing');
+        if ($this->isFilled($billing)) {
+            $blocks['billing'] = ['Billing', $billing];
+        }
+
+        $hasShipping = false;
+
+        if (!$request->boolean('same_as_billing')) {
+            foreach ((array) $request->input('shipping', []) as $i => $row) {
+                if ($this->isFilled($row)) {
+                    $blocks["shipping.$i"] = ['Shipping', $row];
+                    $hasShipping = true;
+                }
+            }
+        }
+
+        // "Same as Billing" ticked, or no shipping address filled: billing is the shipping address too
+        if (!$hasShipping && isset($blocks['billing'])) {
+            $blocks['billing-copy'] = ['Shipping', $billing];
+        }
+
+        // Every field is required in a filled block
+        $labels = [
+            'address'     => 'Address',
+            'state_id'    => 'State',
+            'district_id' => 'District',
+            'city'        => 'City',
+            'pin_code'    => 'Pin Code',
+        ];
+
+        $errors = [];
+
+        foreach ($blocks as $key => [$type, $row]) {
+            if ($key == 'billing-copy') {
+                continue;
+            }
+
+            foreach ($labels as $field => $label) {
+                if (trim($row[$field] ?? '') === '') {
+                    $errors["$key.$field"] = "$label is required.";
+                }
+            }
+
+            $pin = trim($row['pin_code'] ?? '');
+            if ($pin !== '' && !preg_match('/^[0-9]{6}$/', $pin)) {
+                $errors["$key.pin_code"] = 'Pin Code must be 6 digits.';
+            }
+
+            if (mb_strlen(trim($row['city'] ?? '')) > 100) {
+                $errors["$key.city"] = 'City may not be longer than 100 characters.';
+            }
+
+            // The district must be in the state
+            if (!empty($row['state_id']) && !empty($row['district_id'])) {
+                $valid = DB::table('districts')
+                    ->where('id', $row['district_id'])
+                    ->where('state_id', $row['state_id'])
+                    ->exists();
+
+                if (!$valid) {
+                    $errors["$key.district_id"] = 'Please select the State and District again.';
+                }
+            }
+        }
+
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        $rows = [];
+
+        foreach ($blocks as [$type, $row]) {
+            $rows[] = [
+                'company_id'  => $companyId,
+                'type'        => $type,
+                'address'     => trim($row['address']),
+                'state_id'    => $row['state_id'],
+                'district_id' => $row['district_id'],
+                'city'        => trim($row['city']),
+                'pin_code'    => trim($row['pin_code']),
+            ];
+        }
+
+        return $rows;
+    }
+
+    // Has the user typed or picked anything in this address block?
+    private function isFilled($row)
+    {
+        if (!is_array($row)) {
+            return false;
+        }
+
+        foreach (['address', 'state_id', 'district_id', 'city', 'pin_code'] as $field) {
+            if (trim($row[$field] ?? '') !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
