@@ -147,6 +147,199 @@
     });
   </script>
 
+  <!-- Page search: opened by the header's search box or Ctrl + K.
+       It lists every page of the sidebar (so a new sidebar link is searchable by itself)
+       plus the "Add ..." pages below. Type to filter, Up / Down to move, Enter to open. -->
+  <div id="page-search" class="fixed inset-0 z-[60] hidden items-start justify-center bg-black/40 p-4 pt-[12vh] backdrop-blur-sm">
+    <div role="dialog" aria-modal="true" aria-label="Search pages" class="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl">
+      <div class="flex items-center gap-2 border-b border-border px-3">
+        <i data-lucide="search" class="size-4 shrink-0 text-muted-foreground"></i>
+        <input id="page-search-input" type="text" autocomplete="off" placeholder="Search pages…" class="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground">
+        <kbd class="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">ESC</kbd>
+      </div>
+      <div id="page-search-list" class="max-h-80 overflow-y-auto p-2"></div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var box = document.getElementById("page-search");
+      var input = document.getElementById("page-search-input");
+      var list = document.getElementById("page-search-list");
+
+      // Pages that have no sidebar link of their own
+      var extraPages = [
+        { label: "Add Group", href: "{{ route('group') }}" },
+        { label: "Add Ledger", href: "{{ route('ledger') }}" },
+        @foreach(\App\Http\Controllers\Voucher\VoucherController::TYPES as $searchType => $searchVoucher)
+        { label: "Add {{ $searchVoucher['label'] }}", href: "{{ route($searchType) }}" },
+        @endforeach
+      ];
+
+      var pages = null;   // every page, filled the first time the search opens
+      var shown = [];     // the pages that match what is typed
+      var active = 0;     // which of them is highlighted
+      var lastFocus = null;
+
+      function collectPages() {
+        pages = [];
+
+        // Sidebar links. The heading is the menu the link sits under, e.g. "Account Vouchers"
+        document.querySelectorAll("[data-nav] a[href]").forEach(function(link) {
+          var menu = link.closest("ul");
+          var toggle = menu && menu.previousElementSibling;
+
+          pages.push({
+            label: link.textContent.trim(),
+            href: link.href,
+            group: toggle && toggle.matches("[data-group-toggle]") ? toggle.textContent.trim() : "Pages",
+            icon: link.querySelector("svg")
+          });
+        });
+
+        extraPages.forEach(function(page) {
+          pages.push({ label: page.label, href: page.href, group: "Add New", icon: null });
+        });
+      }
+
+      function render() {
+        list.innerHTML = "";
+
+        if (!shown.length) {
+          var empty = document.createElement("p");
+          empty.className = "px-3 py-6 text-center text-sm text-muted-foreground";
+          empty.textContent = "No pages found";
+          list.appendChild(empty);
+          return;
+        }
+
+        var group = null;
+
+        shown.forEach(function(page, index) {
+          // A small heading each time the menu changes
+          if (page.group !== group) {
+            group = page.group;
+            var heading = document.createElement("p");
+            heading.className = "px-2 pb-1 pt-2 text-xs font-medium text-muted-foreground";
+            heading.textContent = group;
+            list.appendChild(heading);
+          }
+
+          var item = document.createElement("a");
+          item.href = page.href;
+          item.dataset.index = index;
+          item.className = "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-start text-sm";
+
+          // Same icon as in the sidebar (a copy of it); "Add ..." pages get a plus
+          if (page.icon) {
+            var icon = page.icon.cloneNode(true);
+            icon.setAttribute("class", "size-4 shrink-0 text-muted-foreground");
+            item.appendChild(icon);
+          } else {
+            item.insertAdjacentHTML("beforeend", '<svg xmlns="http://www.w3.org/2000/svg" class="size-4 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>');
+          }
+
+          item.appendChild(document.createTextNode(page.label));
+          item.addEventListener("mousemove", function() {
+            if (active !== index) {
+              active = index;
+              highlight();
+            }
+          });
+          list.appendChild(item);
+        });
+
+        highlight();
+      }
+
+      function highlight() {
+        list.querySelectorAll("a").forEach(function(item) {
+          var on = Number(item.dataset.index) === active;
+          item.classList.toggle("bg-accent", on);
+          item.classList.toggle("text-accent-foreground", on);
+          if (on) item.scrollIntoView({ block: "nearest" });
+        });
+      }
+
+      // Every typed word must be in the page name or its menu name: "sales reg" finds Sales Register
+      function filter() {
+        var words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+
+        shown = pages.filter(function(page) {
+          var text = (page.label + " " + page.group).toLowerCase();
+          return words.every(function(word) { return text.indexOf(word) !== -1; });
+        });
+
+        active = 0;
+        render();
+      }
+
+      function isOpen() {
+        return !box.classList.contains("hidden");
+      }
+
+      function open() {
+        if (!pages) collectPages();
+        lastFocus = document.activeElement;
+        box.classList.remove("hidden");
+        box.classList.add("flex");
+        input.value = "";
+        filter();
+        input.focus();
+      }
+
+      function close() {
+        box.classList.add("hidden");
+        box.classList.remove("flex");
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+      }
+
+      input.addEventListener("input", filter);
+
+      // These two listeners run in the capture phase (the "true" at the end) and stop the event,
+      // so the theme's own demo search (assets/main-*.js, a fixed list of pages this app
+      // doesn't have) never opens.
+      document.addEventListener("click", function(e) {
+        if (e.target.closest("[data-cmdk-open]")) {
+          e.stopPropagation();
+          open();
+          return;
+        }
+        // A click on the dark area outside the box closes it
+        if (e.target === box) close();
+      }, true);
+
+      document.addEventListener("keydown", function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+          e.preventDefault();
+          e.stopPropagation();
+          isOpen() ? close() : open();
+          return;
+        }
+
+        if (!isOpen()) return;
+
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          close();
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          active = Math.min(active + 1, shown.length - 1);
+          highlight();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          active = Math.max(active - 1, 0);
+          highlight();
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          e.stopPropagation();
+          if (shown[active]) window.location.href = shown[active].href;
+        }
+      }, true);
+    })();
+  </script>
+
   @stack('scripts')
 </body>
 

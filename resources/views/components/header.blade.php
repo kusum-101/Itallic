@@ -5,8 +5,8 @@
     </button>
     <button data-cmdk-open type="button" class="hidden h-9 w-64 min-w-0 items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 sm:flex lg:w-72">
       <i data-lucide="search" class="size-4 text-muted-foreground/70"></i>
-      <span class="flex-1 truncate text-start">Search users, roles, pages…</span>
-      <kbd class="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
+      <span class="flex-1 truncate text-start">Search pages…</span>
+      <kbd class="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Ctrl K</kbd>
     </button>
   </div>
 
