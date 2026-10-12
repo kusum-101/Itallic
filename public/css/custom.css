@@ -32,6 +32,11 @@
   .form-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  /* <div class="col-end"> -> this field sits at the right end of its row */
+  .form-grid .col-end {
+    grid-column: 4;
+  }
 }
 
 /* ===== Mobile only =====
@@ -42,4 +47,37 @@
   .mobile-only {
     display: none;
   }
+}
+
+/* ===== Narration box =====
+   The grey box that holds a journal's narration in the Journal Register.
+   Same width in every row; long text scrolls inside the box. */
+.narration-box {
+  width: 14rem;
+  max-height: 4.5rem;
+  overflow-y: auto;
+  white-space: pre-line;
+}
+
+/* ===== Status badge =====
+   <span class="status-badge verified">      -> green pill
+   <span class="status-badge not-verified">  -> red pill
+*/
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.verified {
+  background: color-mix(in oklch, var(--success) 15%, transparent);
+  color: var(--success-text);
+}
+
+.status-badge.not-verified {
+  background: color-mix(in oklch, var(--destructive) 15%, transparent);
+  color: var(--destructive-text);
 }

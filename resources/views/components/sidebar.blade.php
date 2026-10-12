@@ -120,7 +120,7 @@
             <button
               type="button"
               data-group-toggle
-              class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+              class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground ">
               <span class="flex items-center gap-3">
                 <i
                   data-lucide="mail-plus"
@@ -132,7 +132,7 @@
               <i
                 data-lucide="chevron-down"
                 data-chevron
-                class="size-3.5 shrink-0 transition-transform"></i>
+                class="size-3.5 shrink-0 transition-transform -rotate-90"></i>
             </button>
 
             <!-- Inventory Master Sub Menu -->
@@ -141,7 +141,7 @@
               <li>
                 <a
                   href="{{ route('stock-group') }}"
-                  class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+                  class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground ">
                   <i
                     data-lucide="layers"
                     class="size-[18px] shrink-0 text-sidebar-foreground/60"></i>
@@ -394,7 +394,7 @@
             <button
               type="button"
               data-group-toggle
-              class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+              class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground ">
               <span class="flex items-center gap-3">
                 <i
                   data-lucide="key-round"

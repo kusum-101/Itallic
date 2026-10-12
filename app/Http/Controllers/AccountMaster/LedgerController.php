@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\Ledger;
 use App\Models\State;
 use App\Models\User;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -186,6 +187,13 @@ class LedgerController extends Controller
         $companyId = session('company_id');
 
         $ledger = Ledger::where('company_id', $companyId)->findOrFail($id);
+
+        // A ledger that is on the Debit or Credit side of any voucher has to stay
+        $used = Voucher::where('dr_ledger_id', $ledger->id)->orWhere('cr_ledger_id', $ledger->id)->exists();
+
+        if ($used) {
+            return redirect()->route('list-ledger')->with('error', 'This ledger is used in vouchers, so it can\'t be deleted.');
+        }
 
         $ledger->delete();
 

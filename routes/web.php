@@ -7,6 +7,7 @@ use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\Voucher\VoucherController;
 
 
 
@@ -48,6 +49,27 @@ Route::get('/ledger/{id}/edit', [LedgerController::class, 'edit'])->name('ledger
 Route::put('/ledger/{id}', [LedgerController::class, 'update'])->name('ledger.update');
 Route::delete('/ledger/{id}', [LedgerController::class, 'destroy'])->name('ledger.destroy');
 
+//vouchers
+// The same set of routes for each type in VoucherController::TYPES:
+// /journal + /journal-register, /sales + /sales-register, /purchase, /receipt, /payment, /contra.
+// defaults('type', ...) tells the controller which voucher type the page is for.
+foreach (array_keys(VoucherController::TYPES) as $type) {
+    Route::controller(VoucherController::class)->group(function () use ($type) {
+        Route::get("/$type", 'create')->name($type)->defaults('type', $type);
+        Route::post("/$type", 'store')->name("$type.store")->defaults('type', $type);
+        Route::get("/$type-register", 'index')->name("$type-register")->defaults('type', $type);
+        Route::get("/$type-register/export", 'export')->name("$type-register.export")->defaults('type', $type);
+        Route::get("/$type/{id}", 'show')->whereNumber('id')->name("$type.show")->defaults('type', $type);
+        Route::get("/$type/{id}/edit", 'edit')->whereNumber('id')->name("$type.edit")->defaults('type', $type);
+        Route::put("/$type/{id}", 'update')->whereNumber('id')->name("$type.update")->defaults('type', $type);
+        Route::delete("/$type/{id}", 'destroy')->whereNumber('id')->name("$type.destroy")->defaults('type', $type);
+        Route::post("/$type/{id}/verify", 'verify')->whereNumber('id')->name("$type.verify")->defaults('type', $type);
+    });
+}
+
+// A voucher's document proof (kept on the private disk, so it is opened through the controller)
+Route::get('/voucher-document/{id}', [VoucherController::class, 'document'])->whereNumber('id')->name('voucher-document');
+
 // District / City dropdowns of the ledger address fields (filled after picking a State / District)
 Route::get('/districts/{stateId}', [LocationController::class, 'districts'])->whereNumber('stateId')->name('districts');
 Route::get('/cities/{districtId}', [LocationController::class, 'cities'])->whereNumber('districtId')->name('cities');
@@ -60,8 +82,7 @@ foreach ([
     'stock-group', 'stock-category', 'item', 'unit', 'godown', 'copy-allocation-details',
     'users', 'department', 'position',
     // vouchers
-    'payment-register', 'purchase-register', 'contra-register', 'receipt-register',
-    'journal-register', 'sales-register', 'credit-note-register', 'cheque-register',
+    'credit-note-register', 'cheque-register',
     'material-inward', 'material-outward', 'material-internal-transfer',
     'purchase-order', 'rate-card', 'quotation',
     // reports
@@ -74,3 +95,4 @@ foreach ([
 ] as $page) {
     Route::get("/$page", PageController::class)->name($page);
 }
+
