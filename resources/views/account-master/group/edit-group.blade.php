@@ -13,7 +13,7 @@
     </div>
 
     {{-- data-enter-next (layouts/app): Enter moves to the next field instead of saving --}}
-    <form action="{{ route('group.update', $group->id) }}" method="POST" data-enter-next class="mt-6 space-y-4 rounded-xl border border-border bg-card p-6">
+    <form action="{{ route('groups.update', $group->id) }}" method="POST" data-enter-next data-keep-draft class="mt-6 space-y-4 rounded-xl border border-border bg-card p-6">
       @csrf
       @method('PUT')
 
@@ -32,7 +32,10 @@
       </div>
 
       <div>
-        <label for="parent_id" class="block text-sm font-medium text-foreground">Under</label>
+        <div class="flex items-center gap-1.5">
+          <label for="parent_id" class="text-sm font-medium text-foreground">Under</label>
+          @include('components.add-new', ['route' => 'groups.create', 'title' => 'Add new group'])
+        </div>
         <select id="parent_id" name="parent_id" class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
           <option value="">Primary (top-level group)</option>
           @foreach($parentOptions as $option)
@@ -77,7 +80,7 @@
         <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
           Save
         </button>
-        <a href="{{ route('list-group') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+        <a href="{{ route('groups.index') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
           Cancel
         </a>
       </div>

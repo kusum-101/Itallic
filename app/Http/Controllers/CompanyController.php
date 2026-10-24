@@ -22,6 +22,16 @@ class CompanyController extends Controller
         return view('company.company-list', compact('user', 'companies'));
     }
 
+    // Add Company page: the form to add one more company for the logged-in user
+    public function create()
+    {
+        if (!User::find(session('user_id'))) {
+            return redirect()->route('login');
+        }
+
+        return view('company.add-company');
+    }
+
     // Select Company page: shows all companies of the logged-in user
     public function select()
     {

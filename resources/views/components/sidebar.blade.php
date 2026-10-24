@@ -91,7 +91,7 @@
               <!-- List Group -->
               <li>
                 <a
-                  href="{{ route('list-group') }}"
+                  href="{{ route('groups.index') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
                     data-lucide="folder"
@@ -103,7 +103,7 @@
               <!-- List Ledger -->
               <li>
                 <a
-                  href="{{ route('list-ledger') }}"
+                  href="{{ route('ledgers.index') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
                     data-lucide="book-open"
@@ -140,7 +140,7 @@
 
               <li>
                 <a
-                  href="{{ route('stock-group') }}"
+                  href="{{ route('stock-groups.index') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground ">
                   <i
                     data-lucide="layers"
@@ -151,7 +151,7 @@
 
               <li>
                 <a
-                  href="{{ route('stock-category') }}"
+                  href="{{ route('stock-categories.index') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
                     data-lucide="tags"
@@ -162,7 +162,7 @@
 
               <li>
                 <a
-                  href="{{ route('item') }}"
+                  href="{{ route('items.index') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
                     data-lucide="layers"
@@ -172,10 +172,10 @@
               </li>
               <li>
                 <a
-                  href="{{ route('unit') }}"
+                  href="{{ route('units.index') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
-                    data-lucide="repeat"
+                    data-lucide="scale"
                     class="size-[18px] shrink-0 text-sidebar-foreground/60"></i>
                   <span>Unit</span>
                 </a>
@@ -183,7 +183,7 @@
 
               <li>
                 <a
-                  href="{{ route('godown') }}"
+                  href="{{ route('godowns.index') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
                     data-lucide="building-2"
@@ -194,7 +194,7 @@
 
               <li>
                 <a
-                  href="{{ route('copy-allocation-details') }}"
+                  href="{{ route('items.create') }}#copy_from"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
                     data-lucide="copy"
@@ -437,15 +437,27 @@
                 </a>
               </li>
 
-              <!-- Material Internal Transfer -->
+              <!-- Godown Transfer -->
               <li>
                 <a
-                  href="{{ route('material-internal-transfer') }}"
+                  href="{{ route('godown-transfer') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
                     data-lucide="repeat"
                     class="size-[18px] shrink-0 text-sidebar-foreground/60"></i>
-                  <span>Material Internal Transfer</span>
+                  <span>Godown Transfer</span>
+                </a>
+              </li>
+
+              <!-- Physical Stock -->
+              <li>
+                <a
+                  href="{{ route('physical-stock') }}"
+                  class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+                  <i
+                    data-lucide="square-check"
+                    class="size-[18px] shrink-0 text-sidebar-foreground/60"></i>
+                  <span>Physical Stock</span>
                 </a>
               </li>
 
@@ -482,7 +494,7 @@
                   href="{{ route('purchase-order') }}"
                   class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
                   <i
-                    data-lucide="clipboard"
+                    data-lucide="file-text"
                     class="size-[18px] shrink-0 text-sidebar-foreground/60"></i>
                   <span>Purchase Order</span>
                 </a>

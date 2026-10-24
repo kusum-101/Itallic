@@ -2,6 +2,11 @@
 
 use App\Http\Controllers\AccountMaster\GroupController;
 use App\Http\Controllers\AccountMaster\LedgerController;
+use App\Http\Controllers\InventoryMaster\GodownController;
+use App\Http\Controllers\InventoryMaster\ItemController;
+use App\Http\Controllers\InventoryMaster\StockCategoryController;
+use App\Http\Controllers\InventoryMaster\StockGroupController;
+use App\Http\Controllers\InventoryMaster\UnitController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\PageController;
@@ -24,7 +29,7 @@ Route::post('/logout', [CredentialController::class, 'logout'])->name('logout');
 
 
 //company
-Route::view('/company/add-company', 'company.add-company')->name('add-company');
+Route::get('/company/add-company', [CompanyController::class, 'create'])->name('add-company');
 Route::get('/company-setting', [CompanyController::class, 'index'])->name('company-setting');
 
 // select company (multi-company)
@@ -33,21 +38,47 @@ Route::post('/select-company/{id}', [CompanyController::class, 'choose'])->name(
 
 
 //group
-Route::get('/group', [GroupController::class, 'create'])->name('group');
-Route::post('/group', [GroupController::class, 'store'])->name('group.store');
-Route::get('/list-group', [GroupController::class, 'index'])->name('list-group');
-Route::get('/list-group/export', [GroupController::class, 'export'])->name('list-group.export');
-Route::get('/group/{id}/edit', [GroupController::class, 'edit'])->name('group.edit');
-Route::put('/group/{id}', [GroupController::class, 'update'])->name('group.update');
-Route::delete('/group/{id}', [GroupController::class, 'destroy'])->name('group.destroy');
+// Export comes before the resource, otherwise /groups/export would be taken as /groups/{id}
+Route::get('/groups/export', [GroupController::class, 'export'])->name('groups.export');
+// groups.index, groups.create, groups.store, groups.edit, groups.update, groups.destroy
+// (no show page). parameters() keeps the URL parameter as {id}, so edit($id) etc. stay the same.
+Route::resource('groups', GroupController::class)->except('show')->parameters(['groups' => 'id']);
 
 //ledger
-Route::get('/ledger', [LedgerController::class, 'create'])->name('ledger');
-Route::post('/ledger', [LedgerController::class, 'store'])->name('ledger.store');
-Route::get('/list-ledger', [LedgerController::class, 'index'])->name('list-ledger');
-Route::get('/ledger/{id}/edit', [LedgerController::class, 'edit'])->name('ledger.edit');
-Route::put('/ledger/{id}', [LedgerController::class, 'update'])->name('ledger.update');
-Route::delete('/ledger/{id}', [LedgerController::class, 'destroy'])->name('ledger.destroy');
+// ledgers.index, ledgers.create, ledgers.store, ledgers.edit, ledgers.update, ledgers.destroy
+Route::resource('ledgers', LedgerController::class)->except('show')->parameters(['ledgers' => 'id']);
+
+// Old group / ledger URLs (before the resource routes), so saved bookmarks still open the page
+Route::permanentRedirect('/group', '/groups/create');
+Route::permanentRedirect('/list-group', '/groups');
+Route::permanentRedirect('/list-group/export', '/groups/export');
+Route::permanentRedirect('/group/{id}/edit', '/groups/{id}/edit')->whereNumber('id');
+Route::permanentRedirect('/ledger', '/ledgers/create');
+Route::permanentRedirect('/list-ledger', '/ledgers');
+Route::permanentRedirect('/ledger/{id}/edit', '/ledgers/{id}/edit')->whereNumber('id');
+
+//unit
+// units.index, units.create, units.store, units.edit, units.update, units.destroy
+Route::resource('units', UnitController::class)->except('show')->parameters(['units' => 'id']);
+
+//godown
+// godowns.index, godowns.create, godowns.store, godowns.edit, godowns.update, godowns.destroy
+Route::resource('godowns', GodownController::class)->except('show')->parameters(['godowns' => 'id']);
+
+//stock group
+// stock-groups.index, stock-groups.create, stock-groups.store, stock-groups.edit, stock-groups.update, stock-groups.destroy
+Route::resource('stock-groups', StockGroupController::class)->except('show')->parameters(['stock-groups' => 'id']);
+
+//stock category
+// stock-categories.index, stock-categories.create, stock-categories.store, stock-categories.edit, ...
+Route::resource('stock-categories', StockCategoryController::class)->except('show')->parameters(['stock-categories' => 'id']);
+
+//item
+// items.index, items.create, items.store, items.edit, items.update, items.destroy
+Route::resource('items', ItemController::class)->except('show')->parameters(['items' => 'id']);
+
+// Copy Allocation Details (sidebar) = copy an item: Add Item, starting in its "Copy details from" dropdown
+Route::redirect('/copy-allocation-details', '/items/create#copy_from')->name('copy-allocation-details');
 
 //vouchers
 // The same set of routes for each type in VoucherController::TYPES:
@@ -79,11 +110,10 @@ Route::get('/cities/{districtId}', [LocationController::class, 'cities'])->where
 foreach ([
     // masters
     'alter', 'shipping-address', 'billing-address',
-    'stock-group', 'stock-category', 'item', 'unit', 'godown', 'copy-allocation-details',
     'users', 'department', 'position',
     // vouchers
     'credit-note-register', 'cheque-register',
-    'material-inward', 'material-outward', 'material-internal-transfer',
+    'material-inward', 'material-outward', 'godown-transfer', 'physical-stock',
     'purchase-order', 'rate-card', 'quotation',
     // reports
     'day-book', 'balance-sheet', 'group-report', 'profit-loss', 'ledger-summary',

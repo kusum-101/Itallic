@@ -11,7 +11,7 @@
 
   {{-- form-grid (public/css/custom.css): 1 field per row on mobile, 2 on tablet, 4 on big screens.
        data-enter-next (layouts/app): Enter moves to the next field instead of saving --}}
-  <form action="{{ route('ledger.update', $ledger->id) }}" method="POST" data-enter-next class="form-grid mt-6 rounded-xl border border-border bg-card p-6">
+  <form action="{{ route('ledgers.update', $ledger->id) }}" method="POST" data-enter-next data-keep-draft class="form-grid mt-6 rounded-xl border border-border bg-card p-6">
     @csrf
     @method('PUT')
 
@@ -31,7 +31,10 @@
     </div>
 
     <div class="col-2">
-      <label for="group_id" class="block text-sm font-medium text-foreground">Group</label>
+      <div class="flex items-center gap-1.5">
+        <label for="group_id" class="text-sm font-medium text-foreground">Group</label>
+        @include('components.add-new', ['route' => 'groups.create', 'title' => 'Add new group'])
+      </div>
       {{-- data-party="1" tells the script below to show the party fields for this group --}}
       <select id="group_id" name="group_id" required class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
         <option value="">Select group</option>
@@ -162,7 +165,7 @@
       <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
         Save
       </button>
-      <a href="{{ route('list-ledger') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+      <a href="{{ route('ledgers.index') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
         Cancel
       </a>
     </div>

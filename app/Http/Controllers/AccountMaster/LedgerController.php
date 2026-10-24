@@ -101,7 +101,7 @@ class LedgerController extends Controller
             $ledger->addresses()->createMany($addresses);
         });
 
-        return redirect()->route('list-ledger')->with('success', 'Ledger added successfully.');
+        return redirect()->route('ledgers.index')->with('success', 'Ledger added successfully.');
     }
 
     // Edit Ledger page: the form to edit an existing ledger
@@ -178,7 +178,7 @@ class LedgerController extends Controller
             $ledger->addresses()->createMany($addresses);
         });
 
-        return redirect()->route('list-ledger')->with('success', 'Ledger updated successfully.');
+        return redirect()->route('ledgers.index')->with('success', 'Ledger updated successfully.');
     }
 
     // Delete a ledger
@@ -192,12 +192,12 @@ class LedgerController extends Controller
         $used = Voucher::where('dr_ledger_id', $ledger->id)->orWhere('cr_ledger_id', $ledger->id)->exists();
 
         if ($used) {
-            return redirect()->route('list-ledger')->with('error', 'This ledger is used in vouchers, so it can\'t be deleted.');
+            return redirect()->route('ledgers.index')->with('error', 'This ledger is used in vouchers, so it can\'t be deleted.');
         }
 
         $ledger->delete();
 
-        return redirect()->route('list-ledger')->with('success', 'Ledger deleted successfully.');
+        return redirect()->route('ledgers.index')->with('success', 'Ledger deleted successfully.');
     }
 
     /**

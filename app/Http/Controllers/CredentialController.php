@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Address;
+use App\Models\Godown;
 use App\Models\Group;
+use App\Models\Unit;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 
@@ -42,6 +44,11 @@ class CredentialController extends Controller
     }
     public function registerCompany(Request $request)
     {
+        // A company always belongs to a logged-in user
+        if (!User::find(session('user_id'))) {
+            return redirect()->route('login');
+        }
+
         $request->validate([
             'company_name' => 'required|string|max:255|unique:companies,company_name',
             'company_email' => 'required|email|unique:companies,company_email',
@@ -73,6 +80,10 @@ class CredentialController extends Controller
 
         // Give this new company its default set of groups (Tally's standard chart of groups)
         Group::seedDefaults($company->id);
+
+        // ...and its default units (Nos, Kg, ...) and the "Main Location" godown
+        Unit::seedDefaults($company->id);
+        Godown::seedDefaults($company->id);
 
 
         // Address save
@@ -147,6 +158,10 @@ public function company()
     public function dashboardUser()
     {
         $user = User::find(session('user_id'));
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
         // If no company is selected yet, send the user to pick one
         if (!session('company_id')) {

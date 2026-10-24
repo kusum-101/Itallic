@@ -74,6 +74,10 @@ class VoucherController extends Controller
     // Export to Excel: every voucher that matches the register's filters, as a .csv file
     public function export(Request $request)
     {
+        if (!User::find(session('user_id'))) {
+            return redirect()->route('login');
+        }
+
         $type = $this->type();
         $voucher = self::TYPES[$type];
 

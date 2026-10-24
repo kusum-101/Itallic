@@ -24,7 +24,7 @@
   @endif
 
   <!-- Filters: everything in a single line (scrolls sideways on narrow screens instead of wrapping) -->
-  <form action="{{ route('list-group') }}" method="GET" class="mt-6 flex flex-nowrap items-center gap-2 overflow-x-auto rounded-xl border border-border bg-card p-4">
+  <form action="{{ route('groups.index') }}" method="GET" class="mt-6 flex flex-nowrap items-center gap-2 overflow-x-auto rounded-xl border border-border bg-card p-4">
 
     <input
       type="text"
@@ -52,13 +52,13 @@
     <button type="submit" class="h-10 shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
       Search
     </button>
-    <a href="{{ route('list-group') }}" class="flex h-10 shrink-0 items-center rounded-lg border border-input px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+    <a href="{{ route('groups.index') }}" class="flex h-10 shrink-0 items-center rounded-lg border border-input px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent">
       Reset
     </a>
-    <a href="{{ route('list-group.export', request()->query()) }}" class="flex h-10 shrink-0 items-center rounded-lg border border-input px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+    <a href="{{ route('groups.export', request()->query()) }}" class="flex h-10 shrink-0 items-center rounded-lg border border-input px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent">
       Export to Excel
     </a>
-    <a href="{{ route('group') }}" class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+    <a href="{{ route('groups.create') }}" class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
       <i data-lucide="plus" class="size-4"></i> Add
     </a>
 
@@ -102,12 +102,12 @@
               </button>
 
               <div data-action-menu-panel role="menu" class="fixed z-50 hidden min-w-48 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
-                <a href="{{ route('group.edit', $group->id) }}" role="menuitem" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
+                <a href="{{ route('groups.edit', $group->id) }}" role="menuitem" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
                   <i data-lucide="pencil" class="size-4"></i> Edit
                 </a>
                 <button type="button" role="menuitem"
                   data-delete-group
-                  data-url="{{ route('group.destroy', $group->id) }}"
+                  data-url="{{ route('groups.destroy', $group->id) }}"
                   data-name="{{ $group->name }}"
                   class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-destructive-text transition-colors hover:bg-accent">
                   <i data-lucide="trash-2" class="size-4"></i> Delete

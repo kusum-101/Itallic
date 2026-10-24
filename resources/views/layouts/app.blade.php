@@ -169,8 +169,13 @@
 
       // Pages that have no sidebar link of their own
       var extraPages = [
-        { label: "Add Group", href: "{{ route('group') }}" },
-        { label: "Add Ledger", href: "{{ route('ledger') }}" },
+        { label: "Add Group", href: "{{ route('groups.create') }}" },
+        { label: "Add Ledger", href: "{{ route('ledgers.create') }}" },
+        { label: "Add Stock Group", href: "{{ route('stock-groups.create') }}" },
+        { label: "Add Stock Category", href: "{{ route('stock-categories.create') }}" },
+        { label: "Add Item", href: "{{ route('items.create') }}" },
+        { label: "Add Unit", href: "{{ route('units.create') }}" },
+        { label: "Add Godown", href: "{{ route('godowns.create') }}" },
         @foreach(\App\Http\Controllers\Voucher\VoucherController::TYPES as $searchType => $searchVoucher)
         { label: "Add {{ $searchVoucher['label'] }}", href: "{{ route($searchType) }}" },
         @endforeach
@@ -337,6 +342,136 @@
           if (shown[active]) window.location.href = shown[active].href;
         }
       }, true);
+    })();
+  </script>
+
+  <!-- Draft (forms with data-keep-draft): whatever is typed in the form is kept in this tab
+       (sessionStorage), so it is still there after the page is reloaded (Ctrl + R / F5).
+       Opening the page any other way (sidebar link, Cancel and back, new tab) starts fresh.
+       Saving the form throws the draft away.
+
+       Rows added with a "+ Add" button (Opening Stock, Shipping Address) come back too:
+         <tbody data-draft-list="openings" data-draft-template="opening-template">  -> the list, its row <template>
+         <tr data-draft-row>                                                        -> one row of it
+       Their fields are named openings[3][quantity], so the 3 tells which row a value belongs to.
+
+       This runs before the page's own scripts (@stack('scripts') below), so those scripts
+       start from the restored values, as if the page had come with them. -->
+  <script>
+    (function() {
+      var forms = document.querySelectorAll("form[data-keep-draft]");
+      if (!forms.length) return;
+
+      // Fields that can't or mustn't be kept: files can't be put back into a file input
+      function keep(el) {
+        return el.name && el.name !== "_token" && el.name !== "_method" && el.type !== "file" && el.type !== "password";
+      }
+
+      // The row number in a name: openings[3][quantity] -> "3"
+      function rowIndex(name, prefix) {
+        var match = name.match(new RegExp("^" + prefix + "\\[(\\d+)\\]"));
+        return match ? match[1] : null;
+      }
+
+      forms.forEach(function(form, n) {
+        var key = "draft-{{ session('company_id') }}-" + location.pathname + location.search + "-" + n;
+        var submitting = false;
+
+        function save() {
+          if (submitting) return;
+
+          var fields = Array.prototype.filter.call(form.elements, keep).map(function(el) {
+            return el.type === "checkbox" || el.type === "radio"
+              ? { name: el.name, value: el.value, checked: el.checked }
+              : { name: el.name, value: el.value };
+          });
+
+          try {
+            sessionStorage.setItem(key, JSON.stringify(fields));
+          } catch (e) {
+            // Storage blocked (e.g. private window): the form still works, just no draft
+          }
+        }
+
+        function restore(fields) {
+          var names = fields.map(function(field) { return field.name; });
+
+          // 1. Rows: remove the ones that were removed, add the ones that were added
+          form.querySelectorAll("[data-draft-list]").forEach(function(list) {
+            var prefix = list.dataset.draftList;
+            var template = document.getElementById(list.dataset.draftTemplate);
+            var wanted = [];
+
+            names.forEach(function(name) {
+              var index = rowIndex(name, prefix);
+              if (index !== null && wanted.indexOf(index) === -1) wanted.push(index);
+            });
+
+            var present = [];
+            list.querySelectorAll("[data-draft-row]").forEach(function(row) {
+              var field = row.querySelector("[name]");
+              var index = field ? rowIndex(field.name, prefix) : null;
+              if (wanted.indexOf(index) === -1) {
+                row.remove();
+              } else {
+                present.push(index);
+              }
+            });
+
+            wanted.forEach(function(index) {
+              if (present.indexOf(index) === -1) {
+                list.insertAdjacentHTML("beforeend", template.innerHTML.replace(/__INDEX__/g, index));
+              }
+            });
+          });
+
+          // 2. Values
+          fields.forEach(function(field) {
+            form.querySelectorAll('[name="' + field.name + '"]').forEach(function(el) {
+              if (el.type === "checkbox" || el.type === "radio") {
+                if (el.value === field.value) el.checked = field.checked;
+                return;
+              }
+
+              el.value = field.value;
+
+              // A dropdown whose options come later (e.g. District after the State's list loads):
+              // data-value is the one its script selects once they are there
+              if (el.tagName === "SELECT" && el.value !== field.value) {
+                el.dataset.value = field.value;
+              }
+            });
+          });
+        }
+
+        // Only a reload brings the draft back; any other visit throws it away
+        var navigation = performance.getEntriesByType("navigation")[0];
+        var isReload = navigation && navigation.type === "reload";
+
+        try {
+          if (!isReload) {
+            sessionStorage.removeItem(key);
+          }
+          // When the form comes back from the server with an error, its own values win
+          else if ({{ session()->hasOldInput() ? 'false' : 'true' }}) {
+            var fields = JSON.parse(sessionStorage.getItem(key));
+            if (fields) restore(fields);
+          }
+        } catch (e) {}
+
+        form.addEventListener("input", save);
+        form.addEventListener("change", save);
+        // Rows removed with a button, and anything else: save once more as the page goes away
+        window.addEventListener("pagehide", save);
+
+        // Saved: no draft any more
+        form.addEventListener("submit", function() {
+          submitting = true;
+          try {
+            sessionStorage.removeItem(key);
+          } catch (e) {}
+        });
+      });
     })();
   </script>
 

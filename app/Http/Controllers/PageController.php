@@ -20,5 +20,6 @@ class PageController extends Controller
         $title = Str::headline($request->route()->getName());
 
         return view('pages.coming-soon', compact('user', 'title'));
+        
     }
 }

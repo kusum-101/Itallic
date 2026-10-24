@@ -31,9 +31,10 @@
   </div>
 
   <div data-shipping-section class="{{ $sameAsBilling ? 'hidden' : '' }}">
-    <div data-shipping-list>
+    {{-- data-draft-list / data-draft-template (layouts/app): blocks added here come back after a page reload --}}
+    <div data-shipping-list data-draft-list="shipping" data-draft-template="shipping-template">
       @foreach($shipping as $i => $values)
-        <div data-address-block class="form-grid mt-3 rounded-lg border border-border p-4">
+        <div data-address-block data-draft-row class="form-grid mt-3 rounded-lg border border-border p-4">
           <div class="col-full flex items-center justify-between">
             <span class="text-sm font-medium text-foreground">Shipping Address <span data-block-number>{{ $loop->iteration }}</span></span>
             <button type="button" data-remove-shipping class="rounded-md px-2 py-1 text-sm text-destructive-text hover:bg-accent">Remove</button>
@@ -50,7 +51,7 @@
 
   <!-- A new, empty shipping block. "+ Add Shipping Address" copies it (__INDEX__ becomes a number) -->
   <template id="shipping-template">
-    <div data-address-block class="form-grid mt-3 rounded-lg border border-border p-4">
+    <div data-address-block data-draft-row class="form-grid mt-3 rounded-lg border border-border p-4">
       <div class="col-full flex items-center justify-between">
         <span class="text-sm font-medium text-foreground">Shipping Address <span data-block-number></span></span>
         <button type="button" data-remove-shipping class="rounded-md px-2 py-1 text-sm text-destructive-text hover:bg-accent">Remove</button>
@@ -186,6 +187,10 @@
       e.target.closest("[data-address-block]").remove();
       renumber();
     });
+
+    // After a page reload the draft (layouts/app) may have changed the tick: show or hide to match it
+    shippingSection.classList.toggle("hidden", sameCheckbox.checked);
+    renumber();
 
     // Unticking "Same as Billing" shows the shipping blocks (with one empty block to start with)
     sameCheckbox.addEventListener("change", function() {

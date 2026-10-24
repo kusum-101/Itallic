@@ -172,7 +172,7 @@
                   @csrf
                   <button type="submit" role="menuitem" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent">
                     @if($row->isVerified())
-                      <i data-lucide="rotate-ccw" class="size-4"></i> Unverify
+                      <i data-lucide="undo-2" class="size-4"></i> Unverify
                     @else
                       <i data-lucide="circle-check" class="size-4"></i> Verify
                     @endif

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+    @extends('layouts.app')
 
 @section('title', ($entry ? 'Edit ' : 'Add ') . $voucher['label'])
 
@@ -59,9 +59,7 @@
       <div class="flex items-center gap-1.5">
         <label for="{{ $side['key'] }}_ledger_id" class="block text-sm font-medium text-foreground">{{ $side['label'] }} <span class="text-destructive-text">*</span></label>
         {{-- Opens Add Ledger in a new tab, so this half-filled voucher is not lost --}}
-        <a href="{{ route('ledger') }}" target="_blank" title="Add new ledger" class="text-success-text">
-          <i data-lucide="circle-plus" class="size-4"></i>
-        </a>
+        @include('components.add-new', ['route' => 'ledgers.create', 'title' => 'Add new ledger'])
       </div>
       <div class="mt-1.5 flex gap-2">
         {{-- data-balance: the ledger's current balance (opening balance + vouchers), shown in the box on the right --}}

@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class GroupController extends Controller
 {
@@ -64,18 +65,21 @@ class GroupController extends Controller
     // Save the new group
     public function store(Request $request)
     {
+        $companyId = session('company_id');
+
         $request->validate([
             'name' => [
                 'required', 'string', 'max:255',
-                Rule::unique('groups')->where('company_id', session('company_id')),
+                Rule::unique('groups')->where('company_id', $companyId),
             ],
-            'parent_id' => 'required|exists:groups,id',
+            // Only a group of this company can be the parent
+            'parent_id' => ['required', Rule::exists('groups', 'id')->where('company_id', $companyId)],
         ], [
             'name.unique' => 'A group with this name already exists.',
         ]);
 
         // A group's nature always matches the group it sits under
-        $parent = Group::findOrFail($request->parent_id);
+        $parent = Group::where('company_id', $companyId)->findOrFail($request->parent_id);
 
         Group::create([
             'company_id' => session('company_id'),
@@ -85,7 +89,7 @@ class GroupController extends Controller
             'is_primary' => false,
         ]);
 
-        return redirect()->route('list-group')->with('success', 'Group added successfully.');
+        return redirect()->route('groups.index')->with('success', 'Group added successfully.');
     }
 
     // Edit Group page: the form to edit an existing group
@@ -102,7 +106,7 @@ class GroupController extends Controller
         $group = Group::where('company_id', $companyId)->findOrFail($id);
 
         if ($group->is_primary) {
-            return redirect()->route('list-group')->with('error', 'Default groups cannot be edited.');
+            return redirect()->route('groups.index')->with('error', 'Default groups cannot be edited.');
         }
 
         // A group can't be placed under itself, so leave it out of the options
@@ -122,7 +126,7 @@ class GroupController extends Controller
         $group = Group::where('company_id', $companyId)->findOrFail($id);
 
         if ($group->is_primary) {
-            return redirect()->route('list-group')->with('error', 'Default groups cannot be edited.');
+            return redirect()->route('groups.index')->with('error', 'Default groups cannot be edited.');
         }
 
         $request->validate([
@@ -130,17 +134,30 @@ class GroupController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('groups')->where('company_id', $companyId)->ignore($group->id),
             ],
-            'parent_id' => 'nullable|exists:groups,id',
+            // Only a group of this company can be the parent
+            'parent_id' => ['nullable', Rule::exists('groups', 'id')->where('company_id', $companyId)],
             // Only a top-level (Primary) group needs its nature picked manually
             'nature' => 'required_without:parent_id|in:Assets,Liabilities,Income,Expenses',
         ], [
             'name.unique' => 'A group with this name already exists.',
         ]);
 
+        $parent = $request->parent_id
+            ? Group::where('company_id', $companyId)->findOrFail($request->parent_id)
+            : null;
+
+        // A group can't go under itself or under one of its own sub-groups (that would make a loop),
+        // so climb up from the new parent and make sure this group is not on the way
+        for ($above = $parent; $above; $above = $above->parent) {
+            if ($above->id == $group->id) {
+                throw ValidationException::withMessages([
+                    'parent_id' => 'A group can\'t be placed under itself or one of its own sub-groups.',
+                ]);
+            }
+        }
+
         // A sub-group's nature always matches the group it sits under
-        $nature = $request->parent_id
-            ? Group::findOrFail($request->parent_id)->nature
-            : $request->nature;
+        $nature = $parent ? $parent->nature : $request->nature;
 
         $group->update([
             'name'      => $request->name,
@@ -148,7 +165,16 @@ class GroupController extends Controller
             'nature'    => $nature,
         ]);
 
-        return redirect()->route('list-group')->with('success', 'Group updated successfully.');
+        // The sub-groups below follow the new nature too, one level at a time
+        $found = [$group->id];
+
+        while ($found) {
+            $query = Group::where('company_id', $companyId)->whereIn('parent_id', $found);
+            $found = $query->pluck('id')->all();
+            $query->update(['nature' => $nature]);
+        }
+
+        return redirect()->route('groups.index')->with('success', 'Group updated successfully.');
     }
 
     // Delete a group
@@ -159,25 +185,29 @@ class GroupController extends Controller
         $group = Group::where('company_id', $companyId)->findOrFail($id);
 
         if ($group->is_primary) {
-            return redirect()->route('list-group')->with('error', 'Default groups cannot be deleted.');
+            return redirect()->route('groups.index')->with('error', 'Default groups cannot be deleted.');
         }
 
         if ($group->children()->exists()) {
-            return redirect()->route('list-group')->with('error', 'Move or delete the sub-groups under this group first.');
+            return redirect()->route('groups.index')->with('error', 'Move or delete the sub-groups under this group first.');
         }
 
         if ($group->ledgers()->exists()) {
-            return redirect()->route('list-group')->with('error', 'Move or delete the ledgers under this group first.');
+            return redirect()->route('groups.index')->with('error', 'Move or delete the ledgers under this group first.');
         }
 
         $group->delete();
 
-        return redirect()->route('list-group')->with('success', 'Group deleted successfully.');
+        return redirect()->route('groups.index')->with('success', 'Group deleted successfully.');
     }
 
     // Export the (filtered) group list to a CSV file that opens fine in Excel
     public function export(Request $request)
     {
+        if (!User::find(session('user_id'))) {
+            return redirect()->route('login');
+        }
+
         $companyId = session('company_id');
 
         $groups = Group::where('company_id', $companyId)
