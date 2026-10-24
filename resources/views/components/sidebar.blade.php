@@ -19,7 +19,6 @@
               ['label' => 'Item',           'icon' => 'boxes',      'url' => route('items.index'),            'add' => route('items.create')],
               ['label' => 'Unit',           'icon' => 'scale',      'url' => route('units.index'),            'add' => route('units.create')],
               ['label' => 'Godown',         'icon' => 'building-2', 'url' => route('godowns.index'),          'add' => route('godowns.create')],
-              ['label' => 'Copy Allocation Details', 'icon' => 'copy', 'url' => route('items.create') . '#copy_from'],
           ]],
           ['label' => 'User Master', 'icon' => 'user-cog', 'children' => [
               ['label' => 'Users',      'icon' => 'users',       'url' => route('users')],
@@ -217,7 +216,7 @@
       var bestLength = 0;
 
       document.querySelectorAll('[data-nav] a.side-link').forEach(function (link) {
-        // A link with a #part (Copy Allocation Details) is a shortcut into another page
+        // A link with a #part is a shortcut into another page, not a page of its own
         if (link.hash) return;
 
         var linkPath = new URL(link.href).pathname.replace(/\/+$/, '');

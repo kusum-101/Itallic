@@ -196,7 +196,7 @@
         copySelect.form.submit();
       });
 
-      // Sidebar "Copy Allocation Details" opens this page at #copy_from: start in the dropdown
+      // /copy-allocation-details opens this page at #copy_from: start in the dropdown
       if (location.hash === "#copy_from") copySelect.focus();
     }
 

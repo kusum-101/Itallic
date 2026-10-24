@@ -134,7 +134,10 @@ class VoucherController extends Controller
         // No saved voucher yet: the form (shared with the Edit page) starts empty
         $entry = null;
 
-        return view('voucher.voucher', compact('user', 'type', 'voucher', 'entry', 'drLedgers', 'crLedgers'));
+        // The number this voucher will get, shown in the No box
+        $nextNo = $this->nextNumber($companyId, $type);
+
+        return view('voucher.voucher', compact('user', 'type', 'voucher', 'entry', 'drLedgers', 'crLedgers', 'nextNo'));
     }
 
     // Save the new voucher
@@ -171,7 +174,7 @@ class VoucherController extends Controller
                 'financial_year' => $financialYear,
                 'serial'         => $serial,
                 // e.g. Jv/26-27/00001
-                'voucher_no'     => self::TYPES[$type]['prefix'] . '/' . $financialYear . '/' . str_pad($serial, 5, '0', STR_PAD_LEFT),
+                'voucher_no'     => self::voucherNumber($type, $financialYear, $serial),
                 'created_by'     => session('user_id'),
             ]));
 
@@ -469,5 +472,28 @@ class VoucherController extends Controller
         }
 
         return $ledgers;
+    }
+
+    // A voucher number: prefix / year / serial with 5 digits, e.g. Sl/26-27/00001
+    private static function voucherNumber($type, $financialYear, $serial)
+    {
+        return self::TYPES[$type]['prefix'] . '/' . $financialYear . '/' . str_pad($serial, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * The number the next voucher of this type will get, in the financial year picked in the header.
+     * Only shown on the Add page: the real number is given on save, so if someone else
+     * saves one first, this voucher gets the number after it.
+     */
+    private function nextNumber($companyId, $type)
+    {
+        $financialYear = FinancialYear::code();
+
+        $serial = Voucher::where('company_id', $companyId)
+            ->where('type', $type)
+            ->where('financial_year', $financialYear)
+            ->max('serial') + 1;
+
+        return self::voucherNumber($type, $financialYear, $serial);
     }
 }

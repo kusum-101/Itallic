@@ -29,11 +29,14 @@
       <input
         type="text"
         id="voucher_no"
-        value="{{ $entry?->voucher_no }}"
+        {{-- Add page: the number this voucher will get (nextNumber in the controller) --}}
+        value="{{ $entry?->voucher_no ?? $nextNo }}"
         readonly
         tabindex="-1"
-        placeholder="Auto generated"
-        class="mt-1.5 h-10 w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3 text-sm text-muted-foreground outline-none">
+        class="mt-1.5 h-10 w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3 font-mono text-sm font-semibold text-foreground outline-none">
+      @unless($entry)
+        <p class="mt-1 text-xs text-muted-foreground">Next number, given when you save.</p>
+      @endunless
     </div>
 
     <!-- Date sits on the right end of the first row on big screens -->

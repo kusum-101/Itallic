@@ -81,7 +81,7 @@ Route::resource('stock-categories', StockCategoryController::class)->except('sho
 // items.index, items.create, items.store, items.edit, items.update, items.destroy
 Route::resource('items', ItemController::class)->except('show')->parameters(['items' => 'id']);
 
-// Copy Allocation Details (sidebar) = copy an item: Add Item, starting in its "Copy details from" dropdown
+// Copy Allocation Details (old link, no longer in the sidebar) = copy an item: Add Item, starting in its "Copy details from" dropdown
 Route::redirect('/copy-allocation-details', '/items/create#copy_from')->name('copy-allocation-details');
 
 //vouchers
