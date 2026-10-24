@@ -6,7 +6,10 @@
 
   <!-- Page heading -->
   <div class="flex flex-wrap items-center gap-2">
-    <h1 class="text-2xl font-bold tracking-tight text-foreground">{{ $voucher['label'] }} {{ $entry->voucher_no }}</h1>
+    <div class="flex items-center gap-2">
+      @include('components.back', ['url' => route($type . '-register')])
+      <h1 class="text-xl font-bold tracking-tight text-foreground">{{ $voucher['label'] }} {{ $entry->voucher_no }}</h1>
+    </div>
     <!-- status-badge (public/css/custom.css): green when verified, red when not -->
     <span class="status-badge {{ $entry->isVerified() ? 'verified' : 'not-verified' }}">{{ $entry->status }}</span>
   </div>

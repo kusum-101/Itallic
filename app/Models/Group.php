@@ -61,6 +61,28 @@ class Group extends Model
     }
 
     /**
+     * Ids of the given default groups (e.g. ['Bank Accounts', 'Cash-in-Hand']) of a company,
+     * and of every sub-group below them, at any depth.
+     */
+    public static function idsUnder($companyId, $groupNames)
+    {
+        $groups = self::where('company_id', $companyId)->get();
+
+        // Start with the default groups themselves...
+        $groupIds = $groups->where('is_primary', true)->whereIn('name', $groupNames)->pluck('id')->all();
+
+        // ...then keep adding the groups that sit under them, one level at a time
+        $found = $groupIds;
+
+        while ($found) {
+            $found = $groups->whereIn('parent_id', $found)->whereNotIn('id', $groupIds)->pluck('id')->all();
+            $groupIds = array_merge($groupIds, $found);
+        }
+
+        return $groupIds;
+    }
+
+    /**
      * Create the default groups (Tally's standard chart of groups) for a
      * newly created company. Does nothing if the company already has groups.
      */

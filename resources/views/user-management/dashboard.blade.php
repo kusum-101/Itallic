@@ -1,302 +1,190 @@
 @extends('layouts.app')
 
-@section('title', 'Overview')
+@section('title', 'Dashboard')
+
+@php
+  // Amount in the Indian way: 245267.8 -> ₹2,45,267.80 (lakhs and crores, not millions)
+  $rupees = function ($amount) {
+      $sign = $amount < 0 ? '-' : '';
+      [$whole, $paise] = explode('.', number_format(abs($amount), 2, '.', ''));
+
+      // The last 3 digits stay together, the rest goes in pairs: 245267 -> 2,45,267
+      $lastThree = substr($whole, -3);
+      $rest = substr($whole, 0, -3);
+      if ($rest !== '') {
+          $lastThree = ',' . $lastThree;
+          $rest = preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $rest);
+      }
+
+      return $sign . '₹' . $rest . $lastThree . '.' . $paise;
+  };
+
+  // Business operation cards: label, amount, icon, colour
+  $operations = [
+      ['label' => 'Total Sale',     'amount' => $totalSale,     'icon' => 'trending-up', 'color' => 'chart-1', 'url' => route('sales-register')],
+      ['label' => 'Total Purchase', 'amount' => $totalPurchase, 'icon' => 'receipt',     'color' => 'chart-2', 'url' => route('purchase-register')],
+      ['label' => 'Total Expenses', 'amount' => $totalExpenses, 'icon' => 'wallet',      'color' => 'destructive', 'url' => route('payment-register')],
+  ];
+
+  // Quick Access tiles
+  $quickLinks = [
+      ['label' => 'Create Ledger',          'icon' => 'book-open',   'color' => 'chart-1', 'url' => route('ledgers.create')],
+      ['label' => 'Create Item',            'icon' => 'boxes',       'color' => 'chart-4', 'url' => route('items.create')],
+      ['label' => 'Create Sales',           'icon' => 'trending-up', 'color' => 'chart-2', 'url' => route('sales')],
+      ['label' => 'Create Purchase',        'icon' => 'receipt',     'color' => 'chart-3', 'url' => route('purchase')],
+      ['label' => 'Create Receipt',         'icon' => 'banknote',    'color' => 'chart-4', 'url' => route('receipt')],
+      ['label' => 'Create Payment',         'icon' => 'credit-card', 'color' => 'chart-5', 'url' => route('payment')],
+      ['label' => 'Create Material Inward', 'icon' => 'layers',      'color' => 'chart-1', 'url' => route('material-inward')],
+      ['label' => 'Create Journal',         'icon' => 'scroll-text', 'color' => 'chart-2', 'url' => route('journal')],
+  ];
+
+  $stepsDone = collect($setupSteps)->where('done', true)->count();
+@endphp
 
 @section('content')
-      <!-- Page header -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <!-- Left side -->
+        <div class="space-y-4 xl:col-span-2">
+          <!-- Page header -->
+          <!-- (The financial year and company are in the header) -->
+          <div class="rounded-xl border border-border bg-card px-4 py-3">
+            <h1 class="text-lg font-semibold text-foreground">Dashboard</h1>
+          </div>
+
+          <!-- Business operations: this financial year's totals -->
+          <div class="rounded-xl border border-border bg-card p-4">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 class="text-base font-semibold text-foreground">Business operations</h2>
+              <p class="text-xs text-muted-foreground">{{ $yearStart->format('d M Y') }} to {{ $yearEnd->format('d M Y') }}</p>
+            </div>
+            <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              @foreach ($operations as $card)
+                <a href="{{ $card['url'] }}" class="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/40">
+                  <span class="flex size-11 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--{{ $card['color'] }}) 14%, transparent)">
+                    <i data-lucide="{{ $card['icon'] }}" class="size-5" style="color:var(--{{ $card['color'] }}-text)"></i>
+                  </span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-mono text-lg font-bold tabular-nums text-foreground">{{ $rupees($card['amount']) }}</span>
+                    <span class="block text-sm text-muted-foreground">{{ $card['label'] }}</span>
+                  </span>
+                </a>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Money to receive and to pay -->
+          <div class="rounded-xl border border-border bg-card p-4">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 class="text-base font-semibold text-foreground">Receivable &amp; Payable</h2>
+              <p class="text-xs text-muted-foreground">As on <span class="font-medium text-foreground">{{ $today->format('d M Y') }}</span></p>
+            </div>
+            <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              @foreach ([['Total Receivable Amount', $receivable, $receivableChange], ['Total Payable Amount', $payable, $payableChange]] as [$label, $amount, $change])
+                <div class="flex items-start justify-between gap-3 rounded-lg border border-border p-3">
+                  <div class="min-w-0">
+                    <p class="truncate font-mono text-xl font-bold tabular-nums text-foreground">{{ $rupees($amount) }}</p>
+                    <p class="text-sm text-muted-foreground">{{ $label }}</p>
+                  </div>
+                  <div class="shrink-0 text-end">
+                    @if ($change === null)
+                      {{-- Nothing last month to compare with --}}
+                      <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">New</span>
+                    @else
+                      <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs font-medium tabular-nums {{ $change >= 0 ? 'text-success-text' : 'text-destructive-text' }}" style="background-color:color-mix(in oklch, var({{ $change >= 0 ? '--success' : '--destructive' }}) 12%, transparent)">
+                        <i data-lucide="{{ $change >= 0 ? 'trending-up' : 'trending-down' }}" class="size-3.5"></i>{{ abs($change) }}%
+                      </span>
+                    @endif
+                    <p class="mt-1 text-xs text-muted-foreground">vs last month</p>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Quick Access -->
+          <div class="rounded-xl border border-border bg-card p-4">
+            <h2 class="text-base font-semibold text-foreground">Quick Access</h2>
+            <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              @foreach ($quickLinks as $link)
+                <a href="{{ $link['url'] }}" class="flex flex-col items-center gap-2 rounded-lg border border-border px-2 py-4 text-center transition-colors hover:border-primary/40 hover:bg-muted/40">
+                  <span class="flex size-11 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--{{ $link['color'] }}) 14%, transparent)">
+                    <i data-lucide="{{ $link['icon'] }}" class="size-5" style="color:var(--{{ $link['color'] }}-text)"></i>
+                  </span>
+                  <span class="text-sm font-medium text-foreground">{{ $link['label'] }}</span>
+                </a>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Newest account vouchers -->
+          <div class="rounded-xl border border-border bg-card">
+            <div class="border-b border-border px-4 py-3">
+              <h2 class="text-base font-semibold text-foreground">Recent vouchers</h2>
+            </div>
+            @if ($recentVouchers->isEmpty())
+              <p class="px-4 py-6 text-center text-sm text-muted-foreground">No vouchers yet. Use Quick Access to make the first one.</p>
+            @else
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-border text-left text-xs font-medium text-muted-foreground">
+                      <th class="px-4 py-2.5">No</th>
+                      <th class="px-4 py-2.5">Date</th>
+                      <th class="px-4 py-2.5">Debit (Dr)</th>
+                      <th class="px-4 py-2.5">Credit (Cr)</th>
+                      <th class="px-4 py-2.5 text-end">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    @foreach ($recentVouchers as $row)
+                      <tr class="transition-colors hover:bg-muted/40">
+                        <td class="whitespace-nowrap px-4 py-2.5"><a href="{{ route($row->type . '.show', $row->id) }}" class="font-medium text-primary hover:underline">{{ $row->voucher_no }}</a></td>
+                        <td class="whitespace-nowrap px-4 py-2.5 text-muted-foreground">{{ $row->date->format('d-m-Y') }}</td>
+                        <td class="px-4 py-2.5 text-foreground">{{ $row->drLedger->name ?? '' }}</td>
+                        <td class="px-4 py-2.5 text-foreground">{{ $row->crLedger->name ?? '' }}</td>
+                        <td class="whitespace-nowrap px-4 py-2.5 text-end font-mono tabular-nums text-foreground">{{ $rupees($row->amount) }}</td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            @endif
+          </div>
+        </div>
+
+        <!-- Right side: Setup Guide -->
         <div>
-          <h1 class="text-2xl font-bold tracking-tight text-foreground">Overview</h1>
-          <p class="mt-1 text-sm text-muted-foreground">Everyone with access to the Northwind Labs workspace, at a glance.</p>
-        </div>
-        <div class="flex gap-2">
-          <button type="button" data-toast="Report queued — you'll get an email when it's ready" class="inline-flex items-center gap-2 rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"><i data-lucide="download" class="size-4"></i> Export</button>
-          <a href="add-user.html" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"><i data-lucide="user-plus" class="size-4"></i> Invite user</a>
-        </div>
-      </div>
+          <div class="rounded-xl border border-border bg-card p-4">
+            <h2 class="text-base font-semibold text-foreground">Setup Guide</h2>
+            <p class="mt-1 text-sm text-muted-foreground">Get started by completing the setup tasks below</p>
 
-      <!-- KPI row — [data-sortable] makes these drag-reorderable and remembers the order -->
-      <div class="mt-6 flex items-center justify-between gap-3">
-        <p class="text-xs text-muted-foreground">Drag a card by its grip to reorder, or focus one and press <kbd class="rounded border border-border px-1 font-mono text-[10px]">⌘</kbd>+<kbd class="rounded border border-border px-1 font-mono text-[10px]">←</kbd>/<kbd class="rounded border border-border px-1 font-mono text-[10px]">→</kbd>.</p>
-        <button type="button" data-sort-reset="overview-kpis" class="shrink-0 rounded-lg border border-input px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent">Reset order</button>
-      </div>
-      <div data-sortable="overview-kpis" class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div data-sort-item="kpi-total-users" data-sort-label="Total users" class="group/card relative flex flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-4">
-          <span class="absolute inset-x-0 top-0 h-0.5" style="background-color:var(--chart-1)"></span><button type="button" data-sort-handle aria-label="Reorder this card" class="absolute end-2 top-2 flex size-6 cursor-grab items-center justify-center rounded-md text-muted-foreground/0 transition-colors hover:bg-accent hover:text-foreground group-hover/card:text-muted-foreground focus-visible:text-muted-foreground active:cursor-grabbing"><i data-lucide="grip-vertical" class="size-3.5"></i></button>
-          <div class="flex items-start justify-between">
-            <span class="flex size-9 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="users" class="size-[18px]" style="color:var(--chart-1-text)"></i></span>
-            <span data-sparkline="4820,5140,5390,5610,6020,6480,6810,7240,7690,8130,8520,8942" data-color="chart-1" data-w="84" data-h="30" data-area></span>
-          </div>
-          <div class="space-y-1">
-            <p class="text-sm text-muted-foreground">Total users</p>
-            <div class="flex items-baseline gap-2">
-              <p class="font-mono text-2xl font-bold tracking-tight tabular-nums text-foreground">8,942</p>
-              <span class="inline-flex items-center gap-0.5 font-mono text-xs font-medium tabular-nums text-success-text"><i data-lucide="trending-up" class="size-3.5"></i>4.9%</span>
-            </div>
-            <p class="text-xs text-muted-foreground">vs. last month</p>
-          </div>
-        </div>
+            <ul class="mt-3 space-y-2">
+              @foreach ($setupSteps as $i => $step)
+                <li>
+                  <a href="{{ $step['url'] }}" class="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40">
+                    @if ($step['done'])
+                      <span class="flex size-5 shrink-0 items-center justify-center rounded border border-primary bg-primary/10 text-primary"><i data-lucide="check" class="size-3.5"></i></span>
+                      <span class="text-muted-foreground line-through">{{ $i + 1 }}. {{ $step['label'] }}</span>
+                    @else
+                      <span class="size-5 shrink-0 rounded border border-input"></span>
+                      <span class="text-foreground">{{ $i + 1 }}. {{ $step['label'] }}</span>
+                    @endif
+                  </a>
+                </li>
+              @endforeach
+            </ul>
 
-        <div data-sort-item="kpi-active" data-sort-label="Active this month" class="group/card relative flex flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-4">
-          <span class="absolute inset-x-0 top-0 h-0.5" style="background-color:var(--chart-2)"></span><button type="button" data-sort-handle aria-label="Reorder this card" class="absolute end-2 top-2 flex size-6 cursor-grab items-center justify-center rounded-md text-muted-foreground/0 transition-colors hover:bg-accent hover:text-foreground group-hover/card:text-muted-foreground focus-visible:text-muted-foreground active:cursor-grabbing"><i data-lucide="grip-vertical" class="size-3.5"></i></button>
-          <div class="flex items-start justify-between">
-            <span class="flex size-9 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="activity" class="size-[18px]" style="color:var(--chart-2-text)"></i></span>
-            <span data-sparkline="3410,3680,3820,3910,4280,4620,4870,5180,5490,5810,6120,6437" data-color="chart-2" data-w="84" data-h="30" data-area></span>
-          </div>
-          <div class="space-y-1">
-            <p class="text-sm text-muted-foreground">Active this month</p>
-            <div class="flex items-baseline gap-2">
-              <p class="font-mono text-2xl font-bold tracking-tight tabular-nums text-foreground">6,437</p>
-              <span class="inline-flex items-center gap-0.5 font-mono text-xs font-medium tabular-nums text-success-text"><i data-lucide="trending-up" class="size-3.5"></i>5.2%</span>
+            <!-- How much of the setup is done -->
+            <div class="mt-4">
+              <div class="flex justify-between text-xs text-muted-foreground">
+                <span>{{ $stepsDone }} of {{ count($setupSteps) }} done</span>
+                <span>{{ round($stepsDone / count($setupSteps) * 100) }}%</span>
+              </div>
+              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+                <div class="h-full rounded-full bg-primary" style="width: {{ $stepsDone / count($setupSteps) * 100 }}%"></div>
+              </div>
             </div>
-            <p class="text-xs text-muted-foreground">72% of all users</p>
-          </div>
-        </div>
-
-        <div data-sort-item="kpi-invites" data-sort-label="Pending invites" class="group/card relative flex flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-4">
-          <span class="absolute inset-x-0 top-0 h-0.5" style="background-color:var(--chart-4)"></span><button type="button" data-sort-handle aria-label="Reorder this card" class="absolute end-2 top-2 flex size-6 cursor-grab items-center justify-center rounded-md text-muted-foreground/0 transition-colors hover:bg-accent hover:text-foreground group-hover/card:text-muted-foreground focus-visible:text-muted-foreground active:cursor-grabbing"><i data-lucide="grip-vertical" class="size-3.5"></i></button>
-          <div class="flex items-start justify-between">
-            <span class="flex size-9 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-4) 14%, transparent)"><i data-lucide="mail-plus" class="size-[18px]" style="color:var(--chart-4-text)"></i></span>
-            <span data-sparkline="86,94,112,131,148,162,151,144,138,141,134,128" data-color="chart-4" data-w="84" data-h="30" data-area></span>
-          </div>
-          <div class="space-y-1">
-            <p class="text-sm text-muted-foreground">Pending invites</p>
-            <div class="flex items-baseline gap-2">
-              <p class="font-mono text-2xl font-bold tracking-tight tabular-nums text-foreground">128</p>
-              <span class="inline-flex items-center gap-0.5 font-mono text-xs font-medium tabular-nums text-success-text"><i data-lucide="trending-down" class="size-3.5"></i>4.5%</span>
-            </div>
-            <p class="text-xs text-muted-foreground">19 expire within 7 days</p>
-          </div>
-        </div>
-
-        <div data-sort-item="kpi-privileged" data-sort-label="Privileged accounts" class="group/card relative flex flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-4">
-          <span class="absolute inset-x-0 top-0 h-0.5" style="background-color:var(--chart-3)"></span><button type="button" data-sort-handle aria-label="Reorder this card" class="absolute end-2 top-2 flex size-6 cursor-grab items-center justify-center rounded-md text-muted-foreground/0 transition-colors hover:bg-accent hover:text-foreground group-hover/card:text-muted-foreground focus-visible:text-muted-foreground active:cursor-grabbing"><i data-lucide="grip-vertical" class="size-3.5"></i></button>
-          <div class="flex items-start justify-between">
-            <span class="flex size-9 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-3) 14%, transparent)"><i data-lucide="shield-check" class="size-[18px]" style="color:var(--chart-3-text)"></i></span>
-            <span data-sparkline="41,42,42,44,45,45,46,46,47,47,48,48" data-color="chart-3" data-w="84" data-h="30" data-area></span>
-          </div>
-          <div class="space-y-1">
-            <p class="text-sm text-muted-foreground">Privileged accounts</p>
-            <div class="flex items-baseline gap-2">
-              <p class="font-mono text-2xl font-bold tracking-tight tabular-nums text-foreground">48</p>
-              <span class="inline-flex items-center gap-0.5 font-mono text-xs font-medium tabular-nums text-warning-text"><i data-lucide="trending-up" class="size-3.5"></i>2</span>
-            </div>
-            <p class="text-xs text-muted-foreground">6 pending recertification</p>
           </div>
         </div>
       </div>
-
-      <!-- Growth + role mix
-      <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div class="rounded-xl border border-border bg-card xl:col-span-2">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
-            <div>
-              <h2 class="text-base font-semibold text-foreground">User growth</h2>
-              <p class="text-xs text-muted-foreground">Total vs. monthly active, trailing 12 months</p>
-            </div>
-            <div class="flex items-center gap-4 text-xs">
-              <span class="inline-flex items-center gap-1.5 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-1)"></span>Total</span>
-              <span class="inline-flex items-center gap-1.5 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-2)"></span>Active</span>
-            </div>
-          </div>
-          <div class="p-2">
-            <div data-chart="area" data-series="userGrowth" data-height="290"></div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-border bg-card">
-          <div class="border-b border-border p-4">
-            <h2 class="text-base font-semibold text-foreground">Users by role</h2>
-            <p class="text-xs text-muted-foreground">Current role assignment</p>
-          </div>
-          <div class="p-2">
-            <div data-chart="donut" data-series="usersByRole" data-height="220"></div>
-          </div>
-          <ul class="space-y-2 border-t border-border p-4 pt-3">
-            <li class="flex items-center justify-between text-sm"><span class="inline-flex items-center gap-2 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-1)"></span>Member</span><span class="font-mono font-medium tabular-nums text-foreground">5,218</span></li>
-            <li class="flex items-center justify-between text-sm"><span class="inline-flex items-center gap-2 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-2)"></span>Editor</span><span class="font-mono font-medium tabular-nums text-foreground">2,140</span></li>
-            <li class="flex items-center justify-between text-sm"><span class="inline-flex items-center gap-2 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-3)"></span>Manager</span><span class="font-mono font-medium tabular-nums text-foreground">1,024</span></li>
-            <li class="flex items-center justify-between text-sm"><span class="inline-flex items-center gap-2 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-4)"></span>Admin</span><span class="font-mono font-medium tabular-nums text-foreground">512</span></li>
-            <li class="flex items-center justify-between text-sm"><span class="inline-flex items-center gap-2 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-5)"></span>Owner</span><span class="font-mono font-medium tabular-nums text-foreground">48</span></li>
-          </ul>
-        </div>
-      </div> -->
-
-      <!-- Signups vs churn + weekly sign-ins
-      <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div class="rounded-xl border border-border bg-card xl:col-span-2">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
-            <div>
-              <h2 class="text-base font-semibold text-foreground">Signups vs. churn</h2>
-              <p class="text-xs text-muted-foreground">New accounts against deactivations</p>
-            </div>
-            <div class="flex items-center gap-4 text-xs">
-              <span class="inline-flex items-center gap-1.5 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-1)"></span>Signups</span>
-              <span class="inline-flex items-center gap-1.5 text-muted-foreground"><span class="size-2 rounded-full" style="background-color:var(--chart-4)"></span>Churned</span>
-            </div>
-          </div>
-          <div class="p-2">
-            <div data-chart="column" data-series="signupsChurn" data-height="270"></div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-border bg-card">
-          <div class="border-b border-border p-4">
-            <h2 class="text-base font-semibold text-foreground">Sign-ins this week</h2>
-            <p class="text-xs text-muted-foreground">Unique users per day</p>
-          </div>
-          <div class="p-2">
-            <div data-chart="column" data-series="loginActivity" data-height="200"></div>
-          </div>
-          <div class="grid grid-cols-2 gap-px border-t border-border bg-border">
-            <div class="bg-card p-4">
-              <p class="text-xs text-muted-foreground">Weekday average</p>
-              <p class="mt-0.5 font-mono text-lg font-bold tabular-nums text-foreground">4,376</p>
-            </div>
-            <div class="bg-card p-4">
-              <p class="text-xs text-muted-foreground">Peak hour</p>
-              <p class="mt-0.5 font-mono text-lg font-bold tabular-nums text-foreground">10:00</p>
-            </div>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- Recent users + activity
-      <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div class="rounded-xl border border-border bg-card xl:col-span-2">
-          <div class="flex items-center justify-between border-b border-border p-4">
-            <h2 class="text-base font-semibold text-foreground">Recently added</h2>
-            <a href="users.html" class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">View all <i data-lucide="arrow-right" class="size-3.5"></i></a>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead>
-                <tr class="border-b border-border text-left text-xs font-medium text-muted-foreground">
-                  <th class="px-4 py-2.5">User</th>
-                  <th class="px-4 py-2.5">Role</th>
-                  <th class="px-4 py-2.5">Team</th>
-                  <th class="px-4 py-2.5">Status</th>
-                  <th class="px-4 py-2.5">Added</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-border">
-                <tr class="transition-colors hover:bg-muted/40">
-                  <td class="px-4 py-2.5"><a href="user-detail.html" class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-chart-1/12 text-[11px] font-semibold" style="color:var(--chart-1-text)">HM</span><span><span class="block font-medium text-foreground">Hannah Mbeki</span><span class="block text-xs text-muted-foreground">hannah.mbeki@northwind.co</span></span></a></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Editor</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Marketing</td>
-                  <td class="px-4 py-2.5"><span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-active) 14%, transparent);color:var(--status-active-text)"><span class="size-1.5 rounded-full" style="background-color:var(--status-active)"></span>Active</span></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Aug 18, 2026</td>
-                </tr>
-                <tr class="transition-colors hover:bg-muted/40">
-                  <td class="px-4 py-2.5"><a href="user-detail.html" class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-chart-2/12 text-[11px] font-semibold" style="color:var(--chart-2-text)">DK</span><span><span class="block font-medium text-foreground">Dmitri Kovalenko</span><span class="block text-xs text-muted-foreground">d.kovalenko@northwind.co</span></span></a></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Member</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Engineering</td>
-                  <td class="px-4 py-2.5"><span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-invited) 14%, transparent);color:var(--status-invited-text)"><span class="size-1.5 rounded-full" style="background-color:var(--status-invited)"></span>Invited</span></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Aug 18, 2026</td>
-                </tr>
-                <tr class="transition-colors hover:bg-muted/40">
-                  <td class="px-4 py-2.5"><a href="user-detail.html" class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-chart-3/12 text-[11px] font-semibold" style="color:var(--chart-3-text)">SO</span><span><span class="block font-medium text-foreground">Sofia Oliveira</span><span class="block text-xs text-muted-foreground">sofia.oliveira@northwind.co</span></span></a></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Manager</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Support</td>
-                  <td class="px-4 py-2.5"><span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-active) 14%, transparent);color:var(--status-active-text)"><span class="size-1.5 rounded-full" style="background-color:var(--status-active)"></span>Active</span></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Aug 17, 2026</td>
-                </tr>
-                <tr class="transition-colors hover:bg-muted/40">
-                  <td class="px-4 py-2.5"><a href="user-detail.html" class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-chart-4/12 text-[11px] font-semibold" style="color:var(--chart-4-text)">RA</span><span><span class="block font-medium text-foreground">Rafael Antunes</span><span class="block text-xs text-muted-foreground">rafael.antunes@northwind.co</span></span></a></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Member</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Sales</td>
-                  <td class="px-4 py-2.5"><span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-active) 14%, transparent);color:var(--status-active-text)"><span class="size-1.5 rounded-full" style="background-color:var(--status-active)"></span>Active</span></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Aug 17, 2026</td>
-                </tr>
-                <tr class="transition-colors hover:bg-muted/40">
-                  <td class="px-4 py-2.5"><a href="user-detail.html" class="flex items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-chart-5/12 text-[11px] font-semibold" style="color:var(--chart-5-text)">YT</span><span><span class="block font-medium text-foreground">Yuki Tanabe</span><span class="block text-xs text-muted-foreground">yuki.tanabe@northwind.co</span></span></a></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Editor</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Engineering</td>
-                  <td class="px-4 py-2.5"><span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" style="background-color:color-mix(in oklch, var(--status-inactive) 14%, transparent);color:var(--status-inactive-text)"><span class="size-1.5 rounded-full" style="background-color:var(--status-inactive)"></span>Inactive</span></td>
-                  <td class="px-4 py-2.5 text-muted-foreground">Aug 16, 2026</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-border bg-card">
-          <div class="flex items-center justify-between border-b border-border p-4">
-            <h2 class="text-base font-semibold text-foreground">Recent activity</h2>
-            <a href="audit-log.html" class="text-sm text-muted-foreground transition-colors hover:text-foreground">Audit log</a>
-          </div>
-          <ul class="divide-y divide-border">
-            <li class="flex gap-3 p-4">
-              <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="user-plus" class="size-4" style="color:var(--chart-1-text)"></i></span>
-              <div class="min-w-0">
-                <p class="text-sm text-foreground"><span class="font-medium">Priya Raghavan</span> invited 6 users to <span class="font-medium">Sales</span></p>
-                <p class="mt-0.5 text-xs text-muted-foreground">12 minutes ago</p>
-              </div>
-            </li>
-            <li class="flex gap-3 p-4">
-              <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full" style="background-color:color-mix(in oklch, var(--chart-3) 14%, transparent)"><i data-lucide="key-round" class="size-4" style="color:var(--chart-3-text)"></i></span>
-              <div class="min-w-0">
-                <p class="text-sm text-foreground"><span class="font-medium">Tomas Berg</span> changed the <span class="font-medium">Billing Admin</span> role scope</p>
-                <p class="mt-0.5 text-xs text-muted-foreground">48 minutes ago</p>
-              </div>
-            </li>
-            <li class="flex gap-3 p-4">
-              <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full" style="background-color:color-mix(in oklch, var(--destructive) 14%, transparent)"><i data-lucide="shield-alert" class="size-4" style="color:var(--destructive-text)"></i></span>
-              <div class="min-w-0">
-                <p class="text-sm text-foreground">3 failed sign-in attempts blocked for <span class="font-medium">l.chen@northwind.co</span></p>
-                <p class="mt-0.5 text-xs text-muted-foreground">2 hours ago</p>
-              </div>
-            </li>
-            <li class="flex gap-3 p-4">
-              <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="users-round" class="size-4" style="color:var(--chart-2-text)"></i></span>
-              <div class="min-w-0">
-                <p class="text-sm text-foreground"><span class="font-medium">Design</span> team was merged into <span class="font-medium">Product</span></p>
-                <p class="mt-0.5 text-xs text-muted-foreground">5 hours ago</p>
-              </div>
-            </li>
-            <li class="flex gap-3 p-4">
-              <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full" style="background-color:color-mix(in oklch, var(--chart-4) 14%, transparent)"><i data-lucide="user-minus" class="size-4" style="color:var(--chart-4-text)"></i></span>
-              <div class="min-w-0">
-                <p class="text-sm text-foreground"><span class="font-medium">Lucia Ferrero</span> deprovisioned 12 dormant accounts</p>
-                <p class="mt-0.5 text-xs text-muted-foreground">Yesterday, 4:20 PM</p>
-              </div>
-            </li>
-            <li class="flex gap-3 p-4">
-              <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full" style="background-color:color-mix(in oklch, var(--chart-5) 14%, transparent)"><i data-lucide="fingerprint" class="size-4" style="color:var(--chart-5-text)"></i></span>
-              <div class="min-w-0">
-                <p class="text-sm text-foreground">MFA enforcement enabled for <span class="font-medium">Engineering</span></p>
-                <p class="mt-0.5 text-xs text-muted-foreground">Yesterday, 11:02 AM</p>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </div> -->
-
-      <!-- Team distribution + attention
-      <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div class="rounded-xl border border-border bg-card xl:col-span-2">
-          <div class="border-b border-border p-4">
-            <h2 class="text-base font-semibold text-foreground">Users by team</h2>
-            <p class="text-xs text-muted-foreground">Assigned members across the workspace</p>
-          </div>
-          <div class="p-2">
-            <div data-chart="bar" data-series="usersByTeam" data-height="260"></div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-border bg-card">
-          <div class="border-b border-border p-4">
-            <h2 class="text-base font-semibold text-foreground">Needs attention</h2>
-            <p class="text-xs text-muted-foreground">Open items across access and hygiene</p>
-          </div>
-          <ul class="divide-y divide-border">
-            <li><a href="admins.html" class="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--destructive) 14%, transparent)"><i data-lucide="shield-alert" class="size-4" style="color:var(--destructive-text)"></i></span><span class="min-w-0 flex-1"><span class="block text-sm font-medium text-foreground">6 admins overdue recertification</span><span class="block text-xs text-muted-foreground">Q3 access review closes in 9 days</span></span><i data-lucide="chevron-right" class="size-4 shrink-0 text-muted-foreground"></i></a></li>
-            <li><a href="sessions.html" class="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--warning) 14%, transparent)"><i data-lucide="monitor-smartphone" class="size-4" style="color:var(--warning-text)"></i></span><span class="min-w-0 flex-1"><span class="block text-sm font-medium text-foreground">14 sessions on unrecognised devices</span><span class="block text-xs text-muted-foreground">Review or revoke from Sessions</span></span><i data-lucide="chevron-right" class="size-4 shrink-0 text-muted-foreground"></i></a></li>
-            <li><a href="users.html" class="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--warning) 14%, transparent)"><i data-lucide="user-x" class="size-4" style="color:var(--warning-text)"></i></span><span class="min-w-0 flex-1"><span class="block text-sm font-medium text-foreground">74 accounts dormant 90+ days</span><span class="block text-xs text-muted-foreground">Reclaiming these frees 74 seats</span></span><i data-lucide="chevron-right" class="size-4 shrink-0 text-muted-foreground"></i></a></li>
-            <li><a href="invitations.html" class="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-2) 14%, transparent)"><i data-lucide="mail-plus" class="size-4" style="color:var(--chart-2-text)"></i></span><span class="min-w-0 flex-1"><span class="block text-sm font-medium text-foreground">19 invitations expiring soon</span><span class="block text-xs text-muted-foreground">Resend before they lapse</span></span><i data-lucide="chevron-right" class="size-4 shrink-0 text-muted-foreground"></i></a></li>
-            <li><a href="security.html" class="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40"><span class="flex size-8 shrink-0 items-center justify-center rounded-lg" style="background-color:color-mix(in oklch, var(--chart-1) 14%, transparent)"><i data-lucide="fingerprint" class="size-4" style="color:var(--chart-1-text)"></i></span><span class="min-w-0 flex-1"><span class="block text-sm font-medium text-foreground">1,967 users without MFA</span><span class="block text-xs text-muted-foreground">78% enrolled workspace-wide</span></span><i data-lucide="chevron-right" class="size-4 shrink-0 text-muted-foreground"></i></a></li>
-          </ul>
-        </div>
-      </div>
-      -->
 @endsection

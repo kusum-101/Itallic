@@ -120,6 +120,10 @@ class GodownController extends Controller
             return redirect()->route('godowns.index')->with('error', 'This godown has opening stock of items, so it can\'t be deleted.');
         }
 
+        if ($godown->stockLines()->exists()) {
+            return redirect()->route('godowns.index')->with('error', 'This godown is used in inventory vouchers, so it can\'t be deleted.');
+        }
+
         $godown->delete();
 
         return redirect()->route('godowns.index')->with('success', 'Godown deleted successfully.');

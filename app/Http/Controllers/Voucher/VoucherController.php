@@ -8,6 +8,7 @@ use App\Models\Ledger;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherDocument;
+use App\Support\FinancialYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +145,15 @@ class VoucherController extends Controller
 
         $data = $this->voucherData($request, $type, $companyId);
         $financialYear = Voucher::financialYear(Carbon::parse($request->date));
+
+        // A new voucher goes into the financial year picked in the header
+        if ($financialYear != FinancialYear::code()) {
+            throw ValidationException::withMessages([
+                'date' => 'The date must be in financial year ' . FinancialYear::label()
+                    . ' (' . FinancialYear::start()->format('d-m-Y') . ' to ' . FinancialYear::end()->format('d-m-Y') . ').'
+                    . ' To enter another year, change the year in the header.',
+            ]);
+        }
 
         // Voucher, its number and its documents are saved together: if one fails, nothing is saved
         $entry = DB::transaction(function () use ($request, $data, $type, $companyId, $financialYear) {
@@ -335,6 +345,8 @@ class VoucherController extends Controller
     {
         return Voucher::where('company_id', $companyId)
             ->where('type', $type)
+            // Only the financial year picked in the header
+            ->where('financial_year', FinancialYear::code())
             ->with('drLedger', 'crLedger', 'documents', 'creator')
             ->when($request->voucher_no, function ($query, $voucherNo) {
                 $query->where('voucher_no', 'like', "%{$voucherNo}%");
@@ -436,20 +448,7 @@ class VoucherController extends Controller
         $query = Ledger::where('company_id', $companyId)->orderBy('name');
 
         if ($groupNames) {
-            $groups = Group::where('company_id', $companyId)->get();
-
-            // Start with the default groups themselves...
-            $groupIds = $groups->where('is_primary', true)->whereIn('name', $groupNames)->pluck('id')->all();
-
-            // ...then keep adding the groups that sit under them, one level at a time
-            $found = $groupIds;
-
-            while ($found) {
-                $found = $groups->whereIn('parent_id', $found)->whereNotIn('id', $groupIds)->pluck('id')->all();
-                $groupIds = array_merge($groupIds, $found);
-            }
-
-            $query->whereIn('group_id', $groupIds);
+            $query->whereIn('group_id', Group::idsUnder($companyId, $groupNames));
         }
 
         $ledgers = $query->get();

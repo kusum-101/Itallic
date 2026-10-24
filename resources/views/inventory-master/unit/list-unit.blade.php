@@ -5,9 +5,17 @@
 @section('content')
 
   <!-- Page heading -->
-  <div>
-    <h1 class="text-2xl font-bold tracking-tight text-foreground">List Units</h1>
-    <p class="mt-1 text-sm text-muted-foreground">Total : {{ $units->count() }}</p>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <div class="flex items-center gap-2">
+        @include('components.back', ['url' => route('dashboardUser')])
+        <h1 class="text-xl font-bold tracking-tight text-foreground">List Units</h1>
+      </div>
+      <p class="mt-0.5 text-sm text-muted-foreground">Total : {{ $units->count() }}</p>
+    </div>
+    <a href="{{ route('units.create') }}" class="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+      <i data-lucide="plus" class="size-4"></i> Add
+    </a>
   </div>
 
   <!-- Success / error message (e.g. after adding, editing or deleting a unit) -->
@@ -24,7 +32,7 @@
   @endif
 
   <!-- Filters: everything in a single line (scrolls sideways on narrow screens instead of wrapping) -->
-  <form action="{{ route('units.index') }}" method="GET" class="mt-6 flex flex-nowrap items-center gap-2 overflow-x-auto rounded-xl border border-border bg-card p-4">
+  <form action="{{ route('units.index') }}" method="GET" class="mt-4 flex flex-nowrap items-center gap-2 overflow-x-auto list-toolbar">
 
     <input
       type="text"
@@ -45,15 +53,12 @@
     <a href="{{ route('units.index') }}" class="flex h-10 shrink-0 items-center rounded-lg border border-input px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent">
       Reset
     </a>
-    <a href="{{ route('units.create') }}" class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-      <i data-lucide="plus" class="size-4"></i> Add
-    </a>
 
   </form>
 
   <!-- Units table -->
-  <div class="mt-6 overflow-x-auto rounded-xl border border-border bg-card">
-    <table class="w-full text-sm">
+  <div class="list-table overflow-x-auto">
+    <table class="chart-table w-full text-sm">
 
       <thead class="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
         <tr>
@@ -64,7 +69,7 @@
           <th class="px-4 py-3 text-start font-semibold">UQC</th>
           <th class="px-4 py-3 text-start font-semibold">Decimal Places</th>
           <th class="px-4 py-3 text-start font-semibold">Created Date</th>
-          <th class="px-4 py-3 text-start font-semibold">Actions</th>
+          <th class="px-4 py-3 text-end font-semibold">Actions</th>
         </tr>
       </thead>
 
@@ -90,16 +95,11 @@
 
           <!-- Options for this unit: 3-line button opens a small menu -->
           <td class="px-4 py-3">
-            <div data-action-menu>
-              <button type="button" data-action-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Actions" class="flex size-8 items-center justify-center rounded-lg border border-input text-foreground transition-colors hover:bg-accent">
-                <i data-lucide="menu" class="size-4"></i>
-              </button>
-
-              <div data-action-menu-panel role="menu" class="fixed z-50 hidden min-w-48 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
-                <a href="{{ route('units.edit', $unit->id) }}" role="menuitem" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
+            <div class="row-actions">
+                <a href="{{ route('units.edit', $unit->id) }}" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
                   <i data-lucide="pencil" class="size-4"></i> Edit
                 </a>
-                <button type="button" role="menuitem"
+                <button type="button"
                   data-delete-unit
                   data-url="{{ route('units.destroy', $unit->id) }}"
                   data-name="{{ $unit->symbol }}"
@@ -107,7 +107,6 @@
                   <i data-lucide="trash-2" class="size-4"></i> Delete
                 </button>
               </div>
-            </div>
           </td>
         </tr>
         @empty

@@ -63,7 +63,7 @@
 
   @include('components.sidebar')
 
-  <div data-app-shell class="flex min-h-screen min-w-0 flex-col lg:ms-[264px]">
+  <div data-app-shell class="flex min-h-screen min-w-0 flex-col">
     @include('components.header')
 
     <main id="main-content" tabindex="-1" class="min-w-0 flex-1 p-4 sm:p-6">
@@ -147,6 +147,9 @@
     });
   </script>
 
+  <!-- Keyboard shortcuts (Tally-like) and their panel -->
+  @include('components.shortcuts')
+
   <!-- Page search: opened by the header's search box or Ctrl + K.
        It lists every page of the sidebar (so a new sidebar link is searchable by itself)
        plus the "Add ..." pages below. Type to filter, Up / Down to move, Enter to open. -->
@@ -176,7 +179,7 @@
         { label: "Add Item", href: "{{ route('items.create') }}" },
         { label: "Add Unit", href: "{{ route('units.create') }}" },
         { label: "Add Godown", href: "{{ route('godowns.create') }}" },
-        @foreach(\App\Http\Controllers\Voucher\VoucherController::TYPES as $searchType => $searchVoucher)
+        @foreach(\App\Http\Controllers\Voucher\VoucherController::TYPES + \App\Http\Controllers\Voucher\StockVoucherController::TYPES as $searchType => $searchVoucher)
         { label: "Add {{ $searchVoucher['label'] }}", href: "{{ route($searchType) }}" },
         @endforeach
       ];
@@ -190,7 +193,7 @@
         pages = [];
 
         // Sidebar links. The heading is the menu the link sits under, e.g. "Account Vouchers"
-        document.querySelectorAll("[data-nav] a[href]").forEach(function(link) {
+        document.querySelectorAll("[data-nav] a.side-link[href]").forEach(function(link) {
           var menu = link.closest("ul");
           var toggle = menu && menu.previousElementSibling;
 

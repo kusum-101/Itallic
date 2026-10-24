@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Ledger;
 use App\Models\State;
+use App\Models\StockVoucher;
 use App\Models\User;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
@@ -193,6 +194,11 @@ class LedgerController extends Controller
 
         if ($used) {
             return redirect()->route('ledgers.index')->with('error', 'This ledger is used in vouchers, so it can\'t be deleted.');
+        }
+
+        // ...and so does a ledger that is the party of an inventory voucher (Material Inward, ...)
+        if (StockVoucher::where('ledger_id', $ledger->id)->exists()) {
+            return redirect()->route('ledgers.index')->with('error', 'This ledger is the party of inventory vouchers, so it can\'t be deleted.');
         }
 
         $ledger->delete();

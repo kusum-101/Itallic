@@ -5,14 +5,18 @@
 @section('content')
 
   <div>
-    <h1 class="text-2xl font-bold tracking-tight text-foreground">Edit Ledger</h1>
-    <p class="mt-1 text-sm text-muted-foreground">Update this ledger's details.</p>
+    <div class="flex items-center gap-2">
+      @include('components.back', ['url' => route('ledgers.index')])
+      <h1 class="text-xl font-bold tracking-tight text-foreground">Edit Ledger</h1>
+    </div>
+    <p class="mt-0.5 text-sm text-muted-foreground">Update this ledger's details.</p>
   </div>
 
   {{-- form-grid (public/css/custom.css): 1 field per row on mobile, 2 on tablet, 4 on big screens.
        data-enter-next (layouts/app): Enter moves to the next field instead of saving --}}
-  <form action="{{ route('ledgers.update', $ledger->id) }}" method="POST" data-enter-next data-keep-draft class="form-grid mt-6 rounded-xl border border-border bg-card p-6">
+  <form action="{{ route('ledgers.update', $ledger->id) }}" method="POST" data-enter-next data-keep-draft class="form-grid mt-4 form-card">
     @csrf
+    <div class="form-card-head col-full">Ledger Details</div>
     @method('PUT')
 
     <div class="col-2">
@@ -161,12 +165,16 @@
     <!-- Billing / Shipping addresses (party groups only) -->
     @include('account-master.ledger.addresses')
 
-    <div class="col-full flex gap-2 pt-2">
+    <div class="form-card-foot col-full">
       <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
         Save
       </button>
       <a href="{{ route('ledgers.index') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
         Cancel
+      </a>
+      {{-- Opens the list in a new tab, so what is typed here is not lost --}}
+      <a href="{{ route('ledgers.index') }}" target="_blank" class="flex items-center gap-1.5 rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+        <i data-lucide="list" class="size-4"></i> List
       </a>
     </div>
   </form>

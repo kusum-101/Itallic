@@ -155,22 +155,6 @@ public function company()
     return view('credential.company-register', compact('user'));
 }
 
-    public function dashboardUser()
-    {
-        $user = User::find(session('user_id'));
-
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        // If no company is selected yet, send the user to pick one
-        if (!session('company_id')) {
-            return redirect()->route('select-company');
-        }
-
-        return view('user-management.dashboard', compact('user'));
-    }
-
 public function logout(Request $request)
 {
     // Remove the user and the selected company from the session

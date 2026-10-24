@@ -5,9 +5,17 @@
 @section('content')
 
   <!-- Page heading. Total and Amount count every voucher that matches the filters, not just this page -->
-  <div>
-    <h1 class="text-2xl font-bold tracking-tight text-foreground">{{ $voucher['label'] }} Register</h1>
-    <p class="mt-1 text-sm text-muted-foreground">Total : {{ $vouchers->total() }} &nbsp;|&nbsp; Amount : {{ number_format($totalAmount, 2) }}</p>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <div class="flex items-center gap-2">
+        @include('components.back', ['url' => route('dashboardUser')])
+        <h1 class="text-xl font-bold tracking-tight text-foreground">{{ $voucher['label'] }} Register</h1>
+      </div>
+      <p class="mt-0.5 text-sm text-muted-foreground">FY {{ \App\Support\FinancialYear::label() }} &nbsp;|&nbsp; Total : {{ $vouchers->total() }} &nbsp;|&nbsp; Amount : {{ number_format($totalAmount, 2) }}</p>
+    </div>
+    <a href="{{ route($type) }}" class="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+      <i data-lucide="plus" class="size-4"></i> Add
+    </a>
   </div>
 
   <!-- Success / error message (e.g. after adding, editing or deleting a voucher) -->
@@ -24,7 +32,7 @@
   @endif
 
   <!-- Filters. form-grid (public/css/custom.css): 1 field per row on mobile, 2 on tablet, 4 on big screens -->
-  <form action="{{ route($type . '-register') }}" method="GET" class="form-grid mt-6 rounded-xl border border-border bg-card p-4">
+  <form action="{{ route($type . '-register') }}" method="GET" class="form-grid mt-4 list-toolbar">
 
     <input
       type="text"
@@ -82,16 +90,13 @@
       <a href="{{ route($type . '-register.export', request()->except('page')) }}" class="flex h-10 items-center gap-1.5 rounded-lg border border-input px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent">
         <i data-lucide="download" class="size-4"></i> Export to Excel
       </a>
-      <a href="{{ route($type) }}" class="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-        <i data-lucide="plus" class="size-4"></i> Add
-      </a>
     </div>
 
   </form>
 
   <!-- Vouchers table (scrolls sideways when the columns don't fit) -->
-  <div class="mt-6 overflow-x-auto rounded-xl border border-border bg-card">
-    <table class="w-full text-sm">
+  <div class="list-table overflow-x-auto">
+    <table class="chart-table w-full text-sm">
 
       <thead class="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
         <tr>

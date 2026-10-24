@@ -5,8 +5,11 @@
 @section('content')
 
   <div>
-    <h1 class="text-2xl font-bold tracking-tight text-foreground">{{ $entry ? 'Edit' : 'Add' }} {{ $voucher['label'] }}</h1>
-    <p class="mt-1 text-sm text-muted-foreground">{{ $entry ? 'Change the details of ' . $entry->voucher_no . '.' : 'Move an amount from one ledger to another.' }}</p>
+    <div class="flex items-center gap-2">
+      @include('components.back', ['url' => route($type . '-register')])
+      <h1 class="text-xl font-bold tracking-tight text-foreground">{{ $entry ? 'Edit' : 'Add' }} {{ $voucher['label'] }}</h1>
+    </div>
+    <p class="mt-0.5 text-sm text-muted-foreground">{{ $entry ? 'Change the details of ' . $entry->voucher_no . '.' : 'Move an amount from one ledger to another.' }}</p>
   </div>
 
   {{-- One form for every voucher type (Journal, Sales, Purchase, Receipt, Payment, Contra):
@@ -14,8 +17,9 @@
        The same form is the Add page ($entry is null) and the Edit page ($entry is the saved voucher).
        form-grid (public/css/custom.css): 1 field per row on mobile, 2 on tablet, 4 on big screens.
        data-enter-next (layouts/app): Enter moves to the next field instead of saving. --}}
-  <form id="voucher-form" action="{{ $entry ? route($type . '.update', $entry->id) : route($type . '.store') }}" method="POST" enctype="multipart/form-data" data-enter-next class="form-grid mt-6 rounded-xl border border-border bg-card p-6">
+  <form id="voucher-form" action="{{ $entry ? route($type . '.update', $entry->id) : route($type . '.store') }}" method="POST" enctype="multipart/form-data" data-enter-next class="form-grid mt-4 form-card">
     @csrf
+    <div class="form-card-head col-full">{{ $voucher['label'] }} Details</div>
     @if($entry)
       @method('PUT')
     @endif
@@ -39,7 +43,11 @@
         type="date"
         id="date"
         name="date"
-        value="{{ old('date', ($entry?->date ?? now())->format('Y-m-d')) }}"
+        value="{{ old('date', ($entry?->date ?? \App\Support\FinancialYear::defaultDate())->format('Y-m-d')) }}"
+        {{-- Only dates of the voucher's financial year: the year picked in the header for a new one --}}
+        @php $dateYear = $entry ? \App\Support\FinancialYear::of($entry->date) : \App\Support\FinancialYear::selected(); @endphp
+        min="{{ \App\Support\FinancialYear::start($dateYear)->format('Y-m-d') }}"
+        max="{{ \App\Support\FinancialYear::end($dateYear)->format('Y-m-d') }}"
         required
         class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring/20">
       @error('date')
@@ -229,7 +237,7 @@
       @endif
     </div>
 
-    <div class="col-full flex justify-center gap-2 pt-2">
+    <div class="form-card-foot col-full">
       <button type="submit" id="voucher-submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
         {{ $entry ? 'Update' : 'Submit' }}
       </button>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Company;
+use App\Support\FinancialYear;
+use Illuminate\Validation\Rule;
 
 class CompanyController extends Controller
 {
@@ -62,8 +64,26 @@ class CompanyController extends Controller
             return redirect()->route('select-company');
         }
 
+        // A new company starts in the running financial year
         session(['company_id' => $company->id]);
+        session()->forget('financial_year');
 
         return redirect()->route('dashboardUser');
+    }
+
+    // Financial year menu in the header: work in another year (registers, dashboard and new vouchers follow it)
+    public function chooseYear(Request $request)
+    {
+        if (!User::find(session('user_id')) || !session('company_id')) {
+            return redirect()->route('login');
+        }
+
+        $request->validate([
+            'year' => ['required', 'integer', Rule::in(FinancialYear::options(session('company_id')))],
+        ]);
+
+        session(['financial_year' => (int) $request->year]);
+
+        return redirect()->back()->with('success', 'Financial year changed to ' . FinancialYear::label() . '.');
     }
 }

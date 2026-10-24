@@ -145,6 +145,14 @@ class ItemController extends Controller
 
         $this->validateItem($request, $companyId, $item);
 
+        // Vouchers keep this item's quantities in its unit (e.g. 18 Pcs): with another unit
+        // those numbers would mean something else, so the unit stays once vouchers use the item
+        if ($request->unit_id != $item->unit_id && $item->stockLines()->exists()) {
+            throw ValidationException::withMessages([
+                'unit_id' => 'This item is used in inventory vouchers, so its unit can\'t be changed.',
+            ]);
+        }
+
         $unit = Unit::where('company_id', $companyId)->findOrFail($request->unit_id);
 
         $openings = $this->openingRows($request, $unit, $companyId);
@@ -165,7 +173,10 @@ class ItemController extends Controller
     {
         $item = Item::where('company_id', session('company_id'))->findOrFail($id);
 
-        // When Inventory Vouchers are built: an item that is used in a voucher has to stay
+        // An item that is in an inventory voucher (Material Inward, ...) has to stay
+        if ($item->stockLines()->exists()) {
+            return redirect()->route('items.index')->with('error', 'This item is used in inventory vouchers, so it can\'t be deleted.');
+        }
 
         $item->delete();
 

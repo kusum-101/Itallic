@@ -21,8 +21,8 @@
   <p data-unit-hint class="mt-1 hidden text-sm text-primary-text"></p>
 
   <div class="mt-3 overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead class="text-xs uppercase text-muted-foreground">
+    <table class="form-table w-full text-sm">
+      <thead>
         <tr>
           <th class="px-2 py-2 text-start font-semibold">
             <span class="flex items-center gap-1.5">

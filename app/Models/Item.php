@@ -37,4 +37,10 @@ class Item extends Model
     {
         return $this->hasMany(ItemOpening::class);
     }
+
+    // Every inventory voucher row with this item (Material Inward, ...)
+    public function stockLines()
+    {
+        return $this->hasMany(StockVoucherLine::class);
+    }
 }

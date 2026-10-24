@@ -8,13 +8,17 @@
   <div class="mx-auto max-w-lg">
 
     <div>
-      <h1 class="text-2xl font-bold tracking-tight text-foreground">Add Stock Group</h1>
-      <p class="mt-1 text-sm text-muted-foreground">Create a new stock group to sort your items, e.g. Tiles or Marble.</p>
+      <div class="flex items-center gap-2">
+        @include('components.back', ['url' => route('stock-groups.index')])
+        <h1 class="text-xl font-bold tracking-tight text-foreground">Add Stock Group</h1>
+      </div>
+      <p class="mt-0.5 text-sm text-muted-foreground">Create a new stock group to sort your items, e.g. Tiles or Marble.</p>
     </div>
 
     {{-- data-enter-next (layouts/app): Enter moves to the next field instead of saving --}}
-    <form action="{{ route('stock-groups.store') }}" method="POST" data-enter-next data-keep-draft class="mt-6 space-y-4 rounded-xl border border-border bg-card p-6">
+    <form action="{{ route('stock-groups.store') }}" method="POST" data-enter-next data-keep-draft class="mt-4 space-y-4 form-card">
       @csrf
+      <div class="form-card-head col-full">Stock Group Details</div>
 
       <div>
         <label for="name" class="block text-sm font-medium text-foreground">Stock Group Name</label>
@@ -47,12 +51,16 @@
         @enderror
       </div>
 
-      <div class="flex gap-2 pt-2">
+      <div class="form-card-foot">
         <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
           Save
         </button>
         <a href="{{ route('stock-groups.index') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
           Cancel
+        </a>
+        {{-- Opens the list in a new tab, so what is typed here is not lost --}}
+        <a href="{{ route('stock-groups.index') }}" target="_blank" class="flex items-center gap-1.5 rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+          <i data-lucide="list" class="size-4"></i> List
         </a>
       </div>
     </form>

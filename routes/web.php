@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\Voucher\StockVoucherController;
 use App\Http\Controllers\Voucher\VoucherController;
 
 
@@ -24,7 +26,7 @@ Route::get('/company', [CredentialController::class, 'company'])->name('company'
 Route::post('/company/register', [CredentialController::class, 'registerCompany']);
 Route::view('/login', 'credential.user-login')->name('login');
 Route::post('/login', [CredentialController::class, 'login']);
-Route::get('/dashboard-user', [CredentialController::class, 'dashboardUser'])->name('dashboardUser');
+Route::get('/dashboard-user', [DashboardController::class, 'index'])->name('dashboardUser');
 Route::post('/logout', [CredentialController::class, 'logout'])->name('logout');
 
 
@@ -35,11 +37,13 @@ Route::get('/company-setting', [CompanyController::class, 'index'])->name('compa
 // select company (multi-company)
 Route::get('/select-company', [CompanyController::class, 'select'])->name('select-company');
 Route::post('/select-company/{id}', [CompanyController::class, 'choose'])->name('choose-company');
+Route::post('/financial-year', [CompanyController::class, 'chooseYear'])->name('choose-year');
 
 
 //group
 // Export comes before the resource, otherwise /groups/export would be taken as /groups/{id}
 Route::get('/groups/export', [GroupController::class, 'export'])->name('groups.export');
+Route::get('/chart-of-accounts', [GroupController::class, 'chart'])->name('chart-of-accounts');
 // groups.index, groups.create, groups.store, groups.edit, groups.update, groups.destroy
 // (no show page). parameters() keeps the URL parameter as {id}, so edit($id) etc. stay the same.
 Route::resource('groups', GroupController::class)->except('show')->parameters(['groups' => 'id']);
@@ -81,21 +85,24 @@ Route::resource('items', ItemController::class)->except('show')->parameters(['it
 Route::redirect('/copy-allocation-details', '/items/create#copy_from')->name('copy-allocation-details');
 
 //vouchers
-// The same set of routes for each type in VoucherController::TYPES:
-// /journal + /journal-register, /sales + /sales-register, /purchase, /receipt, /payment, /contra.
+// The same set of routes for each type in VoucherController::TYPES (account vouchers:
+// /journal + /journal-register, /sales + /sales-register, /purchase, /receipt, /payment, /contra)
+// and StockVoucherController::TYPES (inventory vouchers: /material-inward + /material-inward-register).
 // defaults('type', ...) tells the controller which voucher type the page is for.
-foreach (array_keys(VoucherController::TYPES) as $type) {
-    Route::controller(VoucherController::class)->group(function () use ($type) {
-        Route::get("/$type", 'create')->name($type)->defaults('type', $type);
-        Route::post("/$type", 'store')->name("$type.store")->defaults('type', $type);
-        Route::get("/$type-register", 'index')->name("$type-register")->defaults('type', $type);
-        Route::get("/$type-register/export", 'export')->name("$type-register.export")->defaults('type', $type);
-        Route::get("/$type/{id}", 'show')->whereNumber('id')->name("$type.show")->defaults('type', $type);
-        Route::get("/$type/{id}/edit", 'edit')->whereNumber('id')->name("$type.edit")->defaults('type', $type);
-        Route::put("/$type/{id}", 'update')->whereNumber('id')->name("$type.update")->defaults('type', $type);
-        Route::delete("/$type/{id}", 'destroy')->whereNumber('id')->name("$type.destroy")->defaults('type', $type);
-        Route::post("/$type/{id}/verify", 'verify')->whereNumber('id')->name("$type.verify")->defaults('type', $type);
-    });
+foreach ([VoucherController::class, StockVoucherController::class] as $controller) {
+    foreach (array_keys($controller::TYPES) as $type) {
+        Route::controller($controller)->group(function () use ($type) {
+            Route::get("/$type", 'create')->name($type)->defaults('type', $type);
+            Route::post("/$type", 'store')->name("$type.store")->defaults('type', $type);
+            Route::get("/$type-register", 'index')->name("$type-register")->defaults('type', $type);
+            Route::get("/$type-register/export", 'export')->name("$type-register.export")->defaults('type', $type);
+            Route::get("/$type/{id}", 'show')->whereNumber('id')->name("$type.show")->defaults('type', $type);
+            Route::get("/$type/{id}/edit", 'edit')->whereNumber('id')->name("$type.edit")->defaults('type', $type);
+            Route::put("/$type/{id}", 'update')->whereNumber('id')->name("$type.update")->defaults('type', $type);
+            Route::delete("/$type/{id}", 'destroy')->whereNumber('id')->name("$type.destroy")->defaults('type', $type);
+            Route::post("/$type/{id}/verify", 'verify')->whereNumber('id')->name("$type.verify")->defaults('type', $type);
+        });
+    }
 }
 
 // A voucher's document proof (kept on the private disk, so it is opened through the controller)
@@ -113,7 +120,7 @@ foreach ([
     'users', 'department', 'position',
     // vouchers
     'credit-note-register', 'cheque-register',
-    'material-inward', 'material-outward', 'godown-transfer', 'physical-stock',
+    'material-outward', 'godown-transfer', 'physical-stock',
     'purchase-order', 'rate-card', 'quotation',
     // reports
     'day-book', 'balance-sheet', 'group-report', 'profit-loss', 'ledger-summary',

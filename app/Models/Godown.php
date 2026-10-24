@@ -20,6 +20,12 @@ class Godown extends Model
         return $this->hasMany(ItemOpening::class);
     }
 
+    // Every inventory voucher row in this godown (Material Inward, ...)
+    public function stockLines()
+    {
+        return $this->hasMany(StockVoucherLine::class);
+    }
+
     /**
      * Create the default "Main Location" godown (like Tally) for a newly
      * created company. Does nothing if the company already has godowns.
