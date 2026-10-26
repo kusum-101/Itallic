@@ -286,8 +286,11 @@ class VoucherController extends Controller
 
         $paths = $entry->documents()->pluck('path')->all();
 
-        // voucher_documents rows go with the voucher (onDelete cascade)
-        $entry->delete();
+        // voucher_documents rows go with the voucher (onDelete cascade). For a sale, a buyer company
+        // that already saved it is told (Voucher::booted), in the same transaction.
+        DB::transaction(function () use ($entry) {
+            $entry->delete();
+        });
 
         Storage::disk('local')->delete($paths);
 

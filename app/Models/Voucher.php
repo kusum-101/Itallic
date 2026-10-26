@@ -18,6 +18,16 @@ class Voucher extends Model
         'due_amount'   => 'decimal:2',
     ];
 
+    protected static function booted()
+    {
+        // However a sale is deleted, a buyer company that already saved it keeps its voucher and is told
+        static::deleting(function (Voucher $voucher) {
+            if ($voucher->type == 'sales') {
+                InterCompanyEntry::saleDeleted($voucher);
+            }
+        });
+    }
+
     // The company this voucher belongs to
     public function company()
     {

@@ -118,12 +118,12 @@
     </table>
   </div>
 
-  <!-- Sales you had saved that the seller then moved to another customer. Your voucher is still in your
-       books: delete it if you don't need it, then Dismiss (or Dismiss to keep it) -->
+  <!-- Sales you had saved that the seller then deleted or moved to another customer. Your voucher is still
+       in your books: delete it if you don't need it, then Dismiss (or Dismiss to keep it) -->
   @if($withdrawn->isNotEmpty())
   <h2 class="mt-8 text-base font-semibold text-foreground">Withdrawn by seller ({{ $withdrawn->count() }})</h2>
   <p class="mt-0.5 text-sm text-muted-foreground">
-    The seller changed the customer of these sales after you saved them. Your voucher is still in your books: open it and delete it if you don't need it.
+    The seller deleted these sales or changed their customer after you saved them. Your voucher is still in your books: open it and delete it if you don't need it.
   </p>
 
   <div class="list-table mt-2 overflow-x-auto">
@@ -134,6 +134,7 @@
           <th class="px-4 py-3 text-start font-semibold">From Company</th>
           <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Sale No</th>
           <th class="px-4 py-3 text-end font-semibold">Amount</th>
+          <th class="px-4 py-3 text-start font-semibold">What Happened</th>
           <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Your Voucher</th>
           <th class="px-4 py-3 text-start font-semibold">Actions</th>
         </tr>
@@ -144,9 +145,10 @@
         <tr>
           <td class="px-4 py-3 text-foreground">{{ $row->fromCompany->company_name }}</td>
           <td class="whitespace-nowrap px-4 py-3">
-            <a href="{{ route('incoming-purchases.show', $row->id) }}" class="text-primary-text">{{ $row->sale->voucher_no }}</a>
+            <a href="{{ route('incoming-purchases.show', $row->id) }}" class="text-primary-text">{{ $row->sale_no }}</a>
           </td>
           <td class="whitespace-nowrap px-4 py-3 text-end text-foreground">{{ number_format($row->purchase->amount, 2) }}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-destructive-text">{{ $row->saleWasDeleted() ? 'Sale deleted' : 'Customer changed' }}</td>
           <td class="whitespace-nowrap px-4 py-3">
             <a href="{{ route($row->purchase->type . '.show', $row->purchase->id) }}" class="text-primary-text">{{ $row->purchase->voucher_no }}</a>
           </td>
@@ -187,7 +189,7 @@
         <tr>
           <td class="px-4 py-3 text-foreground">{{ $row->fromCompany->company_name }}</td>
           <td class="whitespace-nowrap px-4 py-3">
-            <a href="{{ route('incoming-purchases.show', $row->id) }}" class="text-primary-text">{{ $row->sale->voucher_no }}</a>
+            <a href="{{ route('incoming-purchases.show', $row->id) }}" class="text-primary-text">{{ $row->sale_no }}</a>
           </td>
           <td class="whitespace-nowrap px-4 py-3 text-end text-foreground">{{ number_format($row->sale->amount, 2) }}</td>
           <td class="whitespace-nowrap px-4 py-3 text-muted-foreground">

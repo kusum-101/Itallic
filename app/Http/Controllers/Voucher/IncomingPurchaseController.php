@@ -108,6 +108,10 @@ class IncomingPurchaseController extends Controller
         }
 
         $entry = InterCompanyEntry::where('to_company_id', session('company_id'))->findOrFail($id);
+
+        // A deleted sale's documents went with it
+        abort_unless($entry->sale, 404);
+
         $document = $entry->sale->documents()->findOrFail($documentId);
 
         return Storage::disk('local')->response($document->path, $document->original_name);
@@ -270,7 +274,7 @@ class IncomingPurchaseController extends Controller
         }
 
         return redirect()->route('incoming-purchases')
-            ->with('success', 'Sale ' . $entry->sale->voucher_no . ' rejected.');
+            ->with('success', 'Sale ' . $entry->sale_no . ' rejected.');
     }
 
     // Dismiss a sale the seller moved to another customer: this company has seen it and
@@ -286,7 +290,7 @@ class IncomingPurchaseController extends Controller
         $entry->update(['handled_by' => session('user_id'), 'handled_at' => now()]);
 
         return redirect()->route('incoming-purchases')
-            ->with('success', 'Withdrawn sale ' . $entry->sale->voucher_no . ' dismissed.');
+            ->with('success', 'Withdrawn sale ' . $entry->sale_no . ' dismissed.');
     }
 
     /**
@@ -322,9 +326,17 @@ class IncomingPurchaseController extends Controller
     // OK / Reject on a sale someone already handled (e.g. a double click): say what happened to it, change nothing
     private function alreadyHandled(InterCompanyEntry $entry)
     {
-        $entry->refresh()->load('sale', 'purchase');
+        $now = InterCompanyEntry::with('purchase')->find($entry->id);
 
-        $message = 'Sale ' . $entry->sale->voucher_no . ' was already '
+        // The seller deleted the sale meanwhile (an entry nobody had saved a voucher for goes with it)
+        if (!$now) {
+            return redirect()->route('incoming-purchases')
+                ->with('error', 'Sale ' . $entry->sale_no . ' was deleted by the seller. Nothing was saved.');
+        }
+
+        $entry = $now;
+
+        $message = 'Sale ' . $entry->sale_no . ' was already '
             . ($entry->status == 'Accepted' && $entry->purchase ? 'saved as ' . $entry->purchase->voucher_no : strtolower($entry->status))
             . '. Nothing was changed.';
 

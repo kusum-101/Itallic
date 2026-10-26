@@ -105,9 +105,36 @@ class InterCompanyEntry extends Model
 
         self::create([
             'sale_voucher_id' => $sale->id,
+            // Kept on the entry too, for when the sale is deleted (saleDeleted)
+            'sale_no'         => $sale->voucher_no,
             'from_company_id' => $sale->company_id,
             'to_company_id'   => $buyer->id,
         ]);
+    }
+
+    /**
+     * Called just before a Sales voucher is deleted. A buyer who already saved a voucher from it
+     * keeps that voucher and sees the sale under "Withdrawn by seller" (the entry stays, without its sale).
+     * Entries nobody saved a voucher for (pending, rejected) just go.
+     */
+    public static function saleDeleted(Voucher $sale)
+    {
+        $entries = self::where('sale_voucher_id', $sale->id)->get();
+
+        foreach ($entries as $entry) {
+            if (!$entry->purchase_voucher_id) {
+                $entry->delete();
+            } elseif ($entry->status != 'Withdrawn') {
+                // (One already Withdrawn, from an earlier change of customer, stays as it is, dismissed or not)
+                $entry->update(['status' => 'Withdrawn', 'handled_by' => null, 'handled_at' => null]);
+            }
+        }
+    }
+
+    // Withdrawn because the seller deleted the sale (rather than changed its customer)
+    public function saleWasDeleted()
+    {
+        return $this->sale_voucher_id === null;
     }
 
     // The company on this software that the sale's customer ledger is (null for an outside party)

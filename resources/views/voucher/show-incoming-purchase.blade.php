@@ -1,10 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Incoming ' . $entry->sale->voucher_no)
+@section('title', 'Incoming ' . $entry->sale_no)
 
 @section('content')
 
   @php
+    // null once the seller deleted the sale (the entry is then Withdrawn and only its number is left)
     $sale = $entry->sale;
     $seller = $entry->fromCompany;
   @endphp
@@ -13,7 +14,7 @@
   <div class="flex flex-wrap items-center gap-2">
     <div class="flex items-center gap-2">
       @include('components.back', ['url' => route('incoming-purchases')])
-      <h1 class="text-xl font-bold tracking-tight text-foreground">Sale {{ $sale->voucher_no }} from {{ $seller->company_name }}</h1>
+      <h1 class="text-xl font-bold tracking-tight text-foreground">Sale {{ $entry->sale_no }} from {{ $seller->company_name }}</h1>
     </div>
     <!-- status-badge (public/css/custom.css): green once accepted, red while pending or rejected -->
     <span class="status-badge {{ $entry->status == 'Accepted' ? 'verified' : 'not-verified' }}">{{ $entry->status }}</span>
@@ -33,7 +34,18 @@
       'Seller GST No' => $seller->gst ?: '-',
       'Seller PAN No' => $seller->pan ?: '-',
       'Seller Phone'  => $seller->company_phone_no ?: '-',
-      'Sale No'       => $sale->voucher_no,
+      'Sale No'       => $entry->sale_no,
+    ] as $label => $value)
+    <div>
+      <p class="text-xs text-muted-foreground">{{ $label }}</p>
+      <p class="mt-1 text-sm font-medium text-foreground">{{ $value }}</p>
+    </div>
+    @endforeach
+
+    {{-- The sale's own details are gone once the seller deleted it --}}
+    @if($sale)
+
+    @foreach([
       'Sale Date'     => $sale->date->format('d-m-Y'),
       'Reference'     => $sale->reference,
       'Seller Bill No'=> $sale->bill_no ?: '-',
@@ -68,6 +80,8 @@
         </ul>
       @endif
     </div>
+
+    @endif
 
     @if($entry->status == 'Pending')
 
@@ -143,10 +157,14 @@
 
     @elseif($entry->status == 'Withdrawn')
 
-      {{-- Saved here, then the seller changed the sale's customer. The voucher stays until this company deletes it --}}
+      {{-- Saved here, then the seller changed the sale's customer or deleted the sale. The voucher stays until this company deletes it --}}
       <div class="col-full rounded-lg border border-border px-4 py-3" style="background: color-mix(in oklch, var(--destructive) 10%, transparent)">
         <p class="text-sm text-destructive-text">
-          The seller changed the customer of this sale after you saved it, so it is no longer a sale to you.
+          @if($entry->saleWasDeleted())
+            The seller deleted this sale after you saved it.
+          @else
+            The seller changed the customer of this sale after you saved it, so it is no longer a sale to you.
+          @endif
           @if($entry->purchase)
             Your voucher <a href="{{ route($entry->purchase->type . '.show', $entry->purchase->id) }}" class="font-medium underline">{{ $entry->purchase->voucher_no }}</a>
             is still in your books: open it and delete it if you don't need it.
