@@ -13,6 +13,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\Voucher\IncomingPurchaseController;
 use App\Http\Controllers\Voucher\StockVoucherController;
 use App\Http\Controllers\Voucher\VoucherController;
 
@@ -104,6 +105,13 @@ foreach ([VoucherController::class, StockVoucherController::class] as $controlle
         });
     }
 }
+
+// Incoming Purchases: sales other companies on this software made to this company. OK books one as a Purchase.
+Route::get('/incoming-purchases', [IncomingPurchaseController::class, 'index'])->name('incoming-purchases');
+Route::get('/incoming-purchases/{id}', [IncomingPurchaseController::class, 'show'])->whereNumber('id')->name('incoming-purchases.show');
+Route::get('/incoming-purchases/{id}/document/{documentId}', [IncomingPurchaseController::class, 'document'])->whereNumber(['id', 'documentId'])->name('incoming-purchases.document');
+Route::post('/incoming-purchases/{id}/accept', [IncomingPurchaseController::class, 'accept'])->whereNumber('id')->name('incoming-purchases.accept');
+Route::post('/incoming-purchases/{id}/reject', [IncomingPurchaseController::class, 'reject'])->whereNumber('id')->name('incoming-purchases.reject');
 
 // A voucher's document proof (kept on the private disk, so it is opened through the controller)
 Route::get('/voucher-document/{id}', [VoucherController::class, 'document'])->whereNumber('id')->name('voucher-document');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Voucher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\InterCompanyEntry;
 use App\Models\Ledger;
 use App\Models\User;
 use App\Models\Voucher;
@@ -160,13 +161,7 @@ class VoucherController extends Controller
 
         // Voucher, its number and its documents are saved together: if one fails, nothing is saved
         $entry = DB::transaction(function () use ($request, $data, $type, $companyId, $financialYear) {
-            // Next serial of this type in this financial year. lockForUpdate makes a second
-            // user saving at the same moment wait, so both can't get the same number.
-            $serial = Voucher::where('company_id', $companyId)
-                ->where('type', $type)
-                ->where('financial_year', $financialYear)
-                ->lockForUpdate()
-                ->max('serial') + 1;
+            $serial = Voucher::nextSerial($companyId, $type, $financialYear);
 
             $entry = Voucher::create(array_merge($data, [
                 'company_id'     => $companyId,
@@ -179,6 +174,11 @@ class VoucherController extends Controller
             ]));
 
             $this->saveDocuments($request, $entry);
+
+            // A sale to another company on this software goes to its Incoming Purchases
+            if ($type == 'sales') {
+                InterCompanyEntry::syncFromSale($entry);
+            }
 
             return $entry;
         });
@@ -199,7 +199,7 @@ class VoucherController extends Controller
         $type = $this->type();
         $voucher = self::TYPES[$type];
 
-        $entry = $this->findVoucher($id)->load('drLedger', 'crLedger', 'documents', 'creator', 'verifier');
+        $entry = $this->findVoucher($id)->load('drLedger', 'crLedger', 'documents', 'creator', 'verifier', 'sentTo.toCompany', 'receivedFrom.fromCompany', 'receivedFrom.sale');
 
         return view('voucher.show-voucher', compact('user', 'type', 'voucher', 'entry'));
     }
@@ -253,12 +253,17 @@ class VoucherController extends Controller
         // Documents ticked "Remove" on the form
         $removed = $entry->documents()->whereIn('id', (array) $request->input('remove_documents', []))->get();
 
-        DB::transaction(function () use ($request, $entry, $data, $removed) {
+        DB::transaction(function () use ($request, $entry, $data, $removed, $type) {
             $entry->update(array_merge($data, ['updated_by' => session('user_id')]));
 
             $entry->documents()->whereIn('id', $removed->pluck('id'))->delete();
 
             $this->saveDocuments($request, $entry);
+
+            // The buyer company gets the edited sale again
+            if ($type == 'sales') {
+                InterCompanyEntry::syncFromSale($entry);
+            }
         });
 
         // Files go only after the rows are really gone
@@ -475,7 +480,7 @@ class VoucherController extends Controller
     }
 
     // A voucher number: prefix / year / serial with 5 digits, e.g. Sl/26-27/00001
-    private static function voucherNumber($type, $financialYear, $serial)
+    public static function voucherNumber($type, $financialYear, $serial)
     {
         return self::TYPES[$type]['prefix'] . '/' . $financialYear . '/' . str_pad($serial, 5, '0', STR_PAD_LEFT);
     }

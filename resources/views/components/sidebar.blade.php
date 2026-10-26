@@ -5,6 +5,10 @@
    * A sub-menu:  ['label', 'icon', 'children' => [links]]
    * To add a page to the sidebar, add one line here.
    */
+
+  // Sales from other companies on this software waiting for this company's OK
+  $incomingCount = \App\Models\InterCompanyEntry::where('to_company_id', session('company_id'))->where('status', 'Pending')->count();
+
   $menu = [
       'Masters' => [
           ['label' => 'Company Setting', 'icon' => 'settings', 'url' => route('company-setting')],
@@ -30,6 +34,7 @@
           ['label' => 'Account Vouchers', 'icon' => 'receipt', 'children' => [
               ['label' => 'Payment Register',     'icon' => 'credit-card', 'url' => route('payment-register'),  'add' => route('payment')],
               ['label' => 'Purchase Register',    'icon' => 'boxes',       'url' => route('purchase-register'), 'add' => route('purchase')],
+              ['label' => 'Incoming Purchases' . ($incomingCount ? " ($incomingCount)" : ''), 'icon' => 'inbox', 'url' => route('incoming-purchases')],
               ['label' => 'Contra Register',      'icon' => 'repeat',      'url' => route('contra-register'),   'add' => route('contra')],
               ['label' => 'Receipt Register',     'icon' => 'receipt',     'url' => route('receipt-register'),  'add' => route('receipt')],
               ['label' => 'Journal Register',     'icon' => 'book-open',   'url' => route('journal-register'),  'add' => route('journal')],

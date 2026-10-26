@@ -14,6 +14,18 @@
     <span class="status-badge {{ $entry->isVerified() ? 'verified' : 'not-verified' }}">{{ $entry->status }}</span>
   </div>
 
+  {{-- A sale to / purchase from another company on this software (Incoming Purchases) --}}
+  @if($entry->sentTo)
+    <p class="mt-2 text-sm text-muted-foreground">
+      Sent to <span class="font-medium text-foreground">{{ $entry->sentTo->toCompany->company_name }}</span>:
+      {{ ['Pending' => 'waiting for their OK', 'Accepted' => 'saved in their Purchase Register', 'Rejected' => 'rejected by them (edit this sale to send it again)'][$entry->sentTo->status] }}
+    </p>
+  @elseif($entry->receivedFrom)
+    <p class="mt-2 text-sm text-muted-foreground">
+      From <span class="font-medium text-foreground">{{ $entry->receivedFrom->fromCompany->company_name }}</span>'s sale {{ $entry->receivedFrom->sale->voucher_no }}
+    </p>
+  @endif
+
   <!-- Success message (after Verify / Unverify) -->
   @if(session('success'))
   <div class="mt-4 rounded-lg border border-border px-4 py-3" style="background: color-mix(in oklch, var(--success) 10%, transparent)">

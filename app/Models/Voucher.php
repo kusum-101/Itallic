@@ -49,9 +49,34 @@ class Voucher extends Model
         return $this->belongsTo(User::class, 'verified_by');
     }
 
+    // A Sales voucher sent to another company on this software
+    public function sentTo()
+    {
+        return $this->hasOne(InterCompanyEntry::class, 'sale_voucher_id');
+    }
+
+    // A Purchase voucher booked from another company's sale
+    public function receivedFrom()
+    {
+        return $this->hasOne(InterCompanyEntry::class, 'purchase_voucher_id');
+    }
+
     public function isVerified()
     {
         return $this->status == 'Verified';
+    }
+
+    /**
+     * Next serial of a voucher type in a financial year. Call inside a DB transaction:
+     * lockForUpdate makes a second user saving at the same moment wait, so both can't get the same number.
+     */
+    public static function nextSerial($companyId, $type, $financialYear)
+    {
+        return self::where('company_id', $companyId)
+            ->where('type', $type)
+            ->where('financial_year', $financialYear)
+            ->lockForUpdate()
+            ->max('serial') + 1;
     }
 
     /**
