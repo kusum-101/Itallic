@@ -57,7 +57,8 @@ class InterCompanyEntry extends Model
      */
     public static function syncFromSale(Voucher $sale)
     {
-        $entry = self::where('sale_voucher_id', $sale->id)->first();
+        // The sale's current entry (a Withdrawn one is history: that buyer no longer gets this sale)
+        $entry = self::where('sale_voucher_id', $sale->id)->where('status', '!=', 'Withdrawn')->latest('id')->first();
 
         // Saved without changing anything the buyer gets: nothing to send again
         if ($entry && !$sale->wasChanged(self::SENT_FIELDS)) {
@@ -66,26 +67,47 @@ class InterCompanyEntry extends Model
 
         $buyer = self::buyerOf($sale);
 
-        // Already booked by the buyer: send the edit to the same buyer, their OK updates their Purchase.
-        // If the sale now goes to someone else, the buyer's Purchase is theirs to keep or delete.
         if ($entry && $entry->purchase_voucher_id) {
+            // Already saved by the same buyer: send them the edit, their OK updates their voucher
             if ($buyer && $buyer->id == $entry->to_company_id) {
                 $entry->update(['status' => 'Pending', 'handled_by' => null, 'handled_at' => null]);
+
+                return;
             }
+
+            // The sale now goes to someone else: the first buyer keeps their voucher (it is in their books,
+            // only they can delete it) and sees the sale under "Withdrawn by seller" until they dismiss it
+            $entry->update(['status' => 'Withdrawn', 'handled_by' => null, 'handled_at' => null]);
+            $entry = null;
+        }
+
+        // Not saved by the buyer yet: (re)send it to whoever the customer is now
+        $entry?->delete();
+
+        if (!$buyer) {
+            return;
+        }
+
+        // Moved back to a buyer it was withdrawn from, who still has their voucher: send it to them again
+        // on that entry, so their OK updates that voucher instead of making a second one
+        $earlier = self::where('sale_voucher_id', $sale->id)
+            ->where('to_company_id', $buyer->id)
+            ->where('status', 'Withdrawn')
+            ->whereNotNull('purchase_voucher_id')
+            ->latest('id')
+            ->first();
+
+        if ($earlier) {
+            $earlier->update(['status' => 'Pending', 'handled_by' => null, 'handled_at' => null]);
 
             return;
         }
 
-        // Not booked yet: (re)send it to whoever the customer is now
-        $entry?->delete();
-
-        if ($buyer) {
-            self::create([
-                'sale_voucher_id' => $sale->id,
-                'from_company_id' => $sale->company_id,
-                'to_company_id'   => $buyer->id,
-            ]);
-        }
+        self::create([
+            'sale_voucher_id' => $sale->id,
+            'from_company_id' => $sale->company_id,
+            'to_company_id'   => $buyer->id,
+        ]);
     }
 
     // The company on this software that the sale's customer ledger is (null for an outside party)

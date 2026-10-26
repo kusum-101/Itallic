@@ -113,6 +113,7 @@ Route::get('/incoming-purchases/{id}', [IncomingPurchaseController::class, 'show
 Route::get('/incoming-purchases/{id}/document/{documentId}', [IncomingPurchaseController::class, 'document'])->whereNumber(['id', 'documentId'])->name('incoming-purchases.document');
 Route::post('/incoming-purchases/{id}/accept', [IncomingPurchaseController::class, 'accept'])->whereNumber('id')->name('incoming-purchases.accept');
 Route::post('/incoming-purchases/{id}/reject', [IncomingPurchaseController::class, 'reject'])->whereNumber('id')->name('incoming-purchases.reject');
+Route::post('/incoming-purchases/{id}/dismiss', [IncomingPurchaseController::class, 'dismiss'])->whereNumber('id')->name('incoming-purchases.dismiss');
 
 // A voucher's document proof (kept on the private disk, so it is opened through the controller)
 Route::get('/voucher-document/{id}', [VoucherController::class, 'document'])->whereNumber('id')->name('voucher-document');

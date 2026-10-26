@@ -51,6 +51,11 @@ class IncomingPurchaseController extends Controller
             ->latest('updated_at')
             ->get();
 
+        $withdrawn = self::withdrawnQuery($companyId)
+            ->with('sale', 'fromCompany', 'purchase')
+            ->latest('updated_at')
+            ->get();
+
         $rejected = InterCompanyEntry::where('to_company_id', $companyId)
             ->where('status', 'Rejected')
             ->with('sale', 'fromCompany', 'handler')
@@ -67,7 +72,7 @@ class IncomingPurchaseController extends Controller
             $entry->save_as = $this->saveAs($entry, $choices);
         }
 
-        return view('voucher.incoming-purchases', compact('user', 'pending', 'rejected'));
+        return view('voucher.incoming-purchases', compact('user', 'pending', 'withdrawn', 'rejected'));
     }
 
     // View page: every detail of one incoming sale and its documents, and how to save it while it is pending
@@ -266,6 +271,35 @@ class IncomingPurchaseController extends Controller
 
         return redirect()->route('incoming-purchases')
             ->with('success', 'Sale ' . $entry->sale->voucher_no . ' rejected.');
+    }
+
+    // Dismiss a sale the seller moved to another customer: this company has seen it and
+    // decided about its voucher (kept or deleted), so it leaves the list
+    public function dismiss($id)
+    {
+        if (!User::find(session('user_id'))) {
+            return redirect()->route('login');
+        }
+
+        $entry = self::withdrawnQuery(session('company_id'))->with('sale')->findOrFail($id);
+
+        $entry->update(['handled_by' => session('user_id'), 'handled_at' => now()]);
+
+        return redirect()->route('incoming-purchases')
+            ->with('success', 'Withdrawn sale ' . $entry->sale->voucher_no . ' dismissed.');
+    }
+
+    /**
+     * Sales the seller moved to another customer after this company had saved them, not dismissed yet,
+     * and whose voucher is still here (once the voucher is deleted there is nothing left to decide).
+     * Also counted in the sidebar.
+     */
+    public static function withdrawnQuery($companyId)
+    {
+        return InterCompanyEntry::where('to_company_id', $companyId)
+            ->where('status', 'Withdrawn')
+            ->whereNull('handled_by')
+            ->whereNotNull('purchase_voucher_id');
     }
 
     // An entry sent to the current company (404 for anything else)

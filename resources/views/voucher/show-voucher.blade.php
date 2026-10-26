@@ -24,6 +24,10 @@
     <p class="mt-2 text-sm text-muted-foreground">
       From <span class="font-medium text-foreground">{{ $entry->receivedFrom->fromCompany->company_name }}</span>'s sale {{ $entry->receivedFrom->sale->voucher_no }}
     </p>
+    {{-- The seller moved that sale to another customer after this voucher was saved --}}
+    @if($entry->receivedFrom->status == 'Withdrawn')
+      <p class="mt-1 text-sm text-destructive-text">The seller changed the customer of that sale, so it is no longer a sale to you. Delete this voucher if you don't need it.</p>
+    @endif
   @endif
 
   <!-- Success message (after Verify / Unverify) -->

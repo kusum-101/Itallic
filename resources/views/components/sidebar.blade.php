@@ -6,8 +6,10 @@
    * To add a page to the sidebar, add one line here.
    */
 
-  // Sales from other companies on this software waiting for this company's OK
-  $incomingCount = \App\Models\InterCompanyEntry::where('to_company_id', session('company_id'))->where('status', 'Pending')->count();
+  // Sales from other companies on this software waiting for this company's OK, and accepted ones the seller
+  // moved to another customer (the voucher here may need deleting)
+  $incomingCount = \App\Models\InterCompanyEntry::where('to_company_id', session('company_id'))->where('status', 'Pending')->count()
+      + \App\Http\Controllers\Voucher\IncomingPurchaseController::withdrawnQuery(session('company_id'))->count();
 
   $menu = [
       'Masters' => [

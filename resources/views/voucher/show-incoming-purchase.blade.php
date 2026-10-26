@@ -141,6 +141,35 @@
         </a>
       </div>
 
+    @elseif($entry->status == 'Withdrawn')
+
+      {{-- Saved here, then the seller changed the sale's customer. The voucher stays until this company deletes it --}}
+      <div class="col-full rounded-lg border border-border px-4 py-3" style="background: color-mix(in oklch, var(--destructive) 10%, transparent)">
+        <p class="text-sm text-destructive-text">
+          The seller changed the customer of this sale after you saved it, so it is no longer a sale to you.
+          @if($entry->purchase)
+            Your voucher <a href="{{ route($entry->purchase->type . '.show', $entry->purchase->id) }}" class="font-medium underline">{{ $entry->purchase->voucher_no }}</a>
+            is still in your books: open it and delete it if you don't need it.
+          @else
+            Your voucher for it has been deleted.
+          @endif
+        </p>
+      </div>
+
+      <div class="col-full flex flex-wrap justify-center gap-2 pt-2">
+        @if($entry->purchase && !$entry->handled_by)
+        <form action="{{ route('incoming-purchases.dismiss', $entry->id) }}" method="POST">
+          @csrf
+          <button type="submit" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+            Dismiss
+          </button>
+        </form>
+        @endif
+        <a href="{{ route('incoming-purchases') }}" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+          List
+        </a>
+      </div>
+
     @else
 
       <div class="col-full">

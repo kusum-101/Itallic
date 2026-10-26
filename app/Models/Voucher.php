@@ -8,9 +8,14 @@ class Voucher extends Model
 {
     protected $guarded = [];
 
+    // Amounts as decimal:2, so 12000 from the form and 12000.00 from the database count as the same
+    // (saving a sale unchanged must not send it to the buyer company again, InterCompanyEntry::syncFromSale)
     protected $casts = [
-        'date'        => 'date',
-        'verified_at' => 'datetime',
+        'date'         => 'date',
+        'verified_at'  => 'datetime',
+        'quote_amount' => 'decimal:2',
+        'amount'       => 'decimal:2',
+        'due_amount'   => 'decimal:2',
     ];
 
     // The company this voucher belongs to
@@ -52,7 +57,10 @@ class Voucher extends Model
     // A Sales voucher sent to another company on this software
     public function sentTo()
     {
-        return $this->hasOne(InterCompanyEntry::class, 'sale_voucher_id');
+        // Its current buyer (entries of buyers it was moved away from are Withdrawn)
+        return $this->hasOne(InterCompanyEntry::class, 'sale_voucher_id')->ofMany(['id' => 'max'], function ($query) {
+            $query->where('status', '!=', 'Withdrawn');
+        });
     }
 
     // A Purchase voucher booked from another company's sale
