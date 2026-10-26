@@ -19,6 +19,13 @@
     </a>
   </div>
 
+  <!-- Success message (after Alter) -->
+  @if(session('success'))
+  <div class="mt-4 rounded-lg border border-border px-4 py-3" style="background: color-mix(in oklch, var(--success) 10%, transparent)">
+    <p class="text-sm text-success-text">{{ session('success') }}</p>
+  </div>
+  @endif
+
   <!-- Company table -->
   <div class="mt-6 overflow-x-auto rounded-xl border border-border bg-card">
     <table class="w-full text-sm">
@@ -55,7 +62,7 @@
               </button>
 
               <div data-action-menu-panel role="menu" class="fixed z-50 hidden min-w-48 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
-                <a href="{{ route('alter', ['id' => $company->id]) }}" role="menuitem" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
+                <a href="{{ route('company.edit', $company->id) }}" role="menuitem" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
                   <i data-lucide="pencil" class="size-4"></i> Alter
                 </a>
                 <a href="{{ route('shipping-address', ['id' => $company->id]) }}" role="menuitem" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">

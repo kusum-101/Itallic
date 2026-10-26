@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Company;
+use App\Models\Address;
+use Illuminate\Support\Facades\DB;
 use App\Support\FinancialYear;
 use Illuminate\Validation\Rule;
 
@@ -32,6 +34,78 @@ class CompanyController extends Controller
         }
 
         return view('company.add-company');
+    }
+
+    // Edit (Alter) Company page: the same form as Add Company, filled with the company and its billing address
+    public function edit($id)
+    {
+        $user = User::find(session('user_id'));
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $company = $this->findOwn($id, $user)->load('billingAddress');
+
+        return view('company.edit-company', compact('company'));
+    }
+
+    // Save changes to a company and its billing address
+    public function update(Request $request, $id)
+    {
+        $user = User::find(session('user_id'));
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $company = $this->findOwn($id, $user);
+
+        // GST No. is checked and kept in capitals, without spaces around it
+        $request->merge(['gst_number' => strtoupper(trim((string) $request->gst_number)) ?: null]);
+
+        $request->validate(Company::formRules($company), Company::FORM_MESSAGES);
+
+        $oldGst = $company->gst;
+
+        DB::transaction(function () use ($request, $company) {
+            $company->update([
+                'company_name'     => $request->company_name,
+                'company_email'    => $request->company_email,
+                'company_phone_no' => $request->company_mobile,
+                'pan'              => $request->pan_number,
+                'gst'              => $request->gst_number,
+            ]);
+
+            // A company made before addresses were saved has none yet
+            Address::updateOrCreate(
+                ['company_id' => $company->id, 'type' => 'Billing address'],
+                [
+                    'company_name' => $company->company_name,
+                    'address'      => $request->address,
+                    'city'         => $request->city,
+                    'state'        => $request->state,
+                    'district'     => $request->district,
+                    'pin_code'     => $request->pin_code,
+                    'status'       => true,
+                ]
+            );
+        });
+
+        $message = $company->company_name . ' updated successfully.';
+
+        // Sales reach this company by the GST No. on the seller's customer ledger
+        if ($oldGst != $company->gst) {
+            $message .= ' GST No. changed: companies that sell to you on this software must put the new GST No. on your ledger in their books.';
+        }
+
+        return redirect()->route('company-setting')->with('success', $message);
+    }
+
+    // One of the logged-in user's companies (404 for another user's company)
+    private function findOwn($id, User $user)
+    {
+        return Company::where('id', $id)->where('user_id', $user->id)->firstOrFail();
     }
 
     // Select Company page: shows all companies of the logged-in user

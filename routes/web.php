@@ -34,6 +34,8 @@ Route::post('/logout', [CredentialController::class, 'logout'])->name('logout');
 //company
 Route::get('/company/add-company', [CompanyController::class, 'create'])->name('add-company');
 Route::get('/company-setting', [CompanyController::class, 'index'])->name('company-setting');
+Route::get('/company/{id}/edit', [CompanyController::class, 'edit'])->whereNumber('id')->name('company.edit');
+Route::put('/company/{id}', [CompanyController::class, 'update'])->whereNumber('id')->name('company.update');
 
 // select company (multi-company)
 Route::get('/select-company', [CompanyController::class, 'select'])->name('select-company');
@@ -126,7 +128,7 @@ Route::get('/cities/{districtId}', [LocationController::class, 'cities'])->where
 // sidebar & header pages (placeholder until each page is built)
 foreach ([
     // masters
-    'alter', 'shipping-address', 'billing-address',
+    'shipping-address', 'billing-address',
     'users', 'department', 'position',
     // vouchers
     'credit-note-register', 'cheque-register',
