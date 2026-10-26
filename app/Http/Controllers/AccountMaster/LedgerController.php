@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\AccountMaster;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Group;
 use App\Models\Ledger;
 use App\Models\State;
@@ -71,6 +72,9 @@ class LedgerController extends Controller
     {
         $companyId = session('company_id');
 
+        // GST No. is checked in capitals, without spaces around it (the form lets it be typed in lower case)
+        $request->merge(['gst_no' => strtoupper(trim((string) $request->gst_no)) ?: null]);
+
         $request->validate([
             'name' => [
                 'required', 'string', 'max:255',
@@ -78,7 +82,8 @@ class LedgerController extends Controller
             ],
             'group_id'        => 'required|exists:groups,id',
             'contact'         => 'nullable|string|max:255',
-            'gst_no'          => 'nullable|string|size:15',
+            // A customer's GST No. is how a sale reaches that company on this software (Incoming Vouchers)
+            'gst_no'          => ['nullable', 'string', 'regex:' . Company::GST_FORMAT],
             'pan_no'          => 'nullable|string|size:10',
             'gst_percent'     => 'nullable|numeric|min:0|max:100',
             'hsn_code'        => 'nullable|string|max:8',
@@ -86,6 +91,7 @@ class LedgerController extends Controller
             'opening_type'    => 'required|in:Dr,Cr',
         ], [
             'name.unique' => 'A ledger with this name already exists.',
+            'gst_no.regex' => Company::GST_MESSAGE,
         ]);
 
         $group = Group::where('company_id', $companyId)->findOrFail($request->group_id);
@@ -150,6 +156,9 @@ class LedgerController extends Controller
 
         $ledger = Ledger::where('company_id', $companyId)->findOrFail($id);
 
+        // GST No. is checked in capitals, without spaces around it (the form lets it be typed in lower case)
+        $request->merge(['gst_no' => strtoupper(trim((string) $request->gst_no)) ?: null]);
+
         $request->validate([
             'name' => [
                 'required', 'string', 'max:255',
@@ -157,7 +166,8 @@ class LedgerController extends Controller
             ],
             'group_id'        => 'required|exists:groups,id',
             'contact'         => 'nullable|string|max:255',
-            'gst_no'          => 'nullable|string|size:15',
+            // A customer's GST No. is how a sale reaches that company on this software (Incoming Vouchers)
+            'gst_no'          => ['nullable', 'string', 'regex:' . Company::GST_FORMAT],
             'pan_no'          => 'nullable|string|size:10',
             'gst_percent'     => 'nullable|numeric|min:0|max:100',
             'hsn_code'        => 'nullable|string|max:8',
@@ -165,6 +175,7 @@ class LedgerController extends Controller
             'opening_type'    => 'required|in:Dr,Cr',
         ], [
             'name.unique' => 'A ledger with this name already exists.',
+            'gst_no.regex' => Company::GST_MESSAGE,
         ]);
 
         $group = Group::where('company_id', $companyId)->findOrFail($request->group_id);

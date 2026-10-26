@@ -106,7 +106,8 @@ foreach ([VoucherController::class, StockVoucherController::class] as $controlle
     }
 }
 
-// Incoming Purchases: sales other companies on this software made to this company. OK books one as a Purchase.
+// Incoming Vouchers: sales other companies on this software made to this company. OK saves one as a voucher here
+// (Purchase, Journal or Payment). The URLs keep their first name, incoming-purchases.
 Route::get('/incoming-purchases', [IncomingPurchaseController::class, 'index'])->name('incoming-purchases');
 Route::get('/incoming-purchases/{id}', [IncomingPurchaseController::class, 'show'])->whereNumber('id')->name('incoming-purchases.show');
 Route::get('/incoming-purchases/{id}/document/{documentId}', [IncomingPurchaseController::class, 'document'])->whereNumber(['id', 'documentId'])->name('incoming-purchases.document');

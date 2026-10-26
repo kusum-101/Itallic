@@ -14,11 +14,11 @@
     <span class="status-badge {{ $entry->isVerified() ? 'verified' : 'not-verified' }}">{{ $entry->status }}</span>
   </div>
 
-  {{-- A sale to / purchase from another company on this software (Incoming Purchases) --}}
+  {{-- A sale to / purchase from another company on this software (Incoming Vouchers) --}}
   @if($entry->sentTo)
     <p class="mt-2 text-sm text-muted-foreground">
       Sent to <span class="font-medium text-foreground">{{ $entry->sentTo->toCompany->company_name }}</span>:
-      {{ ['Pending' => 'waiting for their OK', 'Accepted' => 'saved in their Purchase Register', 'Rejected' => 'rejected by them (edit this sale to send it again)'][$entry->sentTo->status] }}
+      {{ ['Pending' => 'waiting for their OK', 'Accepted' => 'saved in their books', 'Rejected' => 'rejected by them (edit this sale to send it again)'][$entry->sentTo->status] }}
     </p>
   @elseif($entry->receivedFrom)
     <p class="mt-2 text-sm text-muted-foreground">

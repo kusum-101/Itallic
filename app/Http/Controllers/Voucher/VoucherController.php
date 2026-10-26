@@ -175,7 +175,7 @@ class VoucherController extends Controller
 
             $this->saveDocuments($request, $entry);
 
-            // A sale to another company on this software goes to its Incoming Purchases
+            // A sale to another company on this software goes to its Incoming Vouchers
             if ($type == 'sales') {
                 InterCompanyEntry::syncFromSale($entry);
             }

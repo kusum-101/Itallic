@@ -14,7 +14,7 @@
         'company_email'  => ['Company Email', 'email', 'Enter your company email', true],
         'company_mobile' => ['Company Mobile No.', 'tel', 'Enter your company mobile number', true],
         'pan_number'     => ['PAN Number', 'text', 'Enter PAN Number', true],
-        'gst_number'     => ['GST Number', 'text', 'Enter GST Number', false],
+        'gst_number'     => ['GST Number', 'text', 'e.g. 09AATCM5105A1ZL', false],
     ];
     $placeFields = [
         'city'     => ['City', 'Enter city name'],

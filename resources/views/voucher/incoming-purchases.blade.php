@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Incoming Purchases')
+@section('title', 'Incoming Vouchers')
 
 @section('content')
 
@@ -8,10 +8,10 @@
   <div>
     <div class="flex items-center gap-2">
       @include('components.back', ['url' => route('purchase-register')])
-      <h1 class="text-xl font-bold tracking-tight text-foreground">Incoming Purchases</h1>
+      <h1 class="text-xl font-bold tracking-tight text-foreground">Incoming Vouchers</h1>
     </div>
     <p class="mt-0.5 text-sm text-muted-foreground">
-      Sales other companies on this software made to you. Check the accounts and press OK: it is saved in your Purchase Register.
+      Sales other companies on this software made to you. OK saves one as shown under Saved As (a Purchase, unless you pick another voucher type on its View page).
     </p>
   </div>
 
@@ -28,8 +28,8 @@
   </div>
   @endif
 
-  <!-- Waiting for OK. The two dropdowns start on the usual accounts, so OK is normally the only click.
-       Each row's form sits in its last cell; the dropdowns join it through form="..." -->
+  <!-- Waiting for OK. OK saves each sale as shown under Saved As, so OK is normally the only click.
+       The OK form carries those values in hidden fields; View has the dropdowns to change them -->
   <h2 class="mt-6 text-base font-semibold text-foreground">Waiting for OK ({{ $pending->count() }})</h2>
 
   <div class="list-table mt-2 overflow-x-auto">
@@ -43,8 +43,7 @@
           <th class="px-4 py-3 text-start font-semibold">Narration</th>
           <th class="px-4 py-3 text-start font-semibold">Document</th>
           <th class="px-4 py-3 text-end font-semibold">Amount</th>
-          <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Purchase Account (Dr)</th>
-          <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Supplier (Cr)</th>
+          <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Saved As</th>
           <th class="px-4 py-3 text-start font-semibold">Actions</th>
         </tr>
       </thead>
@@ -78,22 +77,10 @@
 
           <td class="whitespace-nowrap px-4 py-3 text-end font-medium text-foreground">{{ number_format($row->sale->amount, 2) }}</td>
 
-          <td class="px-4 py-3">
-            <select name="purchase_ledger_id" form="accept-{{ $row->id }}" class="h-10 w-full min-w-44 rounded-lg border border-input bg-background px-3 text-sm">
-              @foreach($purchaseLedgers as $ledger)
-                <option value="{{ $ledger->id }}" @selected($row->default_purchase == $ledger->id)>{{ $ledger->name }}</option>
-              @endforeach
-              <option value="new" @selected($row->default_purchase == 'new')>+ New ledger: Purchase</option>
-            </select>
-          </td>
-
-          <td class="px-4 py-3">
-            <select name="supplier_ledger_id" form="accept-{{ $row->id }}" class="h-10 w-full min-w-44 rounded-lg border border-input bg-background px-3 text-sm">
-              @foreach($supplierLedgers as $ledger)
-                <option value="{{ $ledger->id }}" @selected($row->default_supplier == $ledger->id)>{{ $ledger->name }}</option>
-              @endforeach
-              <option value="new" @selected($row->default_supplier == 'new')>+ New ledger: {{ $row->fromCompany->company_name }}</option>
-            </select>
+          {{-- What OK saves. To save it as another voucher type or with other accounts, use View --}}
+          <td class="px-4 py-3 text-foreground">
+            <div class="min-w-48">{{ $row->save_as }}</div>
+            <a href="{{ route('incoming-purchases.show', $row->id) }}" class="text-xs text-primary-text underline">Change</a>
           </td>
 
           <td class="px-4 py-3">
@@ -104,6 +91,10 @@
               </a>
               <form id="accept-{{ $row->id }}" action="{{ route('incoming-purchases.accept', $row->id) }}" method="POST">
                 @csrf
+                @php $type = $row->defaults['type']; @endphp
+                <input type="hidden" name="voucher_type" value="{{ $type }}">
+                <input type="hidden" name="dr_ledger_id" value="{{ $row->defaults['by_type'][$type]['dr'] }}">
+                <input type="hidden" name="cr_ledger_id" value="{{ $row->defaults['by_type'][$type]['cr'] }}">
                 <button type="submit" class="h-10 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
                   OK
                 </button>
@@ -119,7 +110,7 @@
         </tr>
         @empty
         <tr>
-          <td colspan="9" class="px-4 py-8 text-center text-muted-foreground">Nothing waiting. When another company on this software makes a sale to you, it shows up here.</td>
+          <td colspan="8" class="px-4 py-8 text-center text-muted-foreground">Nothing waiting. When another company on this software makes a sale to you, it shows up here.</td>
         </tr>
         @endforelse
 
@@ -127,9 +118,10 @@
     </table>
   </div>
 
-  <!-- The last ones accepted or rejected -->
-  @if($handled->isNotEmpty())
-  <h2 class="mt-8 text-base font-semibold text-foreground">Recently done</h2>
+  <!-- The last ones rejected. Accepted ones are not listed here: they are in their voucher's register
+       (Purchase / Journal / Payment), and their View page there says which sale they came from -->
+  @if($rejected->isNotEmpty())
+  <h2 class="mt-8 text-base font-semibold text-foreground">Rejected</h2>
 
   <div class="list-table mt-2 overflow-x-auto">
     <table class="chart-table w-full text-sm">
@@ -139,30 +131,18 @@
           <th class="px-4 py-3 text-start font-semibold">From Company</th>
           <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Sale No</th>
           <th class="px-4 py-3 text-end font-semibold">Amount</th>
-          <th class="px-4 py-3 text-start font-semibold">Status</th>
-          <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Purchase No</th>
-          <th class="px-4 py-3 text-start font-semibold">Done By</th>
+          <th class="whitespace-nowrap px-4 py-3 text-start font-semibold">Rejected By</th>
         </tr>
       </thead>
 
       <tbody class="divide-y divide-border">
-        @foreach($handled as $row)
+        @foreach($rejected as $row)
         <tr>
           <td class="px-4 py-3 text-foreground">{{ $row->fromCompany->company_name }}</td>
           <td class="whitespace-nowrap px-4 py-3">
             <a href="{{ route('incoming-purchases.show', $row->id) }}" class="text-primary-text">{{ $row->sale->voucher_no }}</a>
           </td>
           <td class="whitespace-nowrap px-4 py-3 text-end text-foreground">{{ number_format($row->sale->amount, 2) }}</td>
-          <td class="px-4 py-3">
-            <span class="status-badge {{ $row->status == 'Accepted' ? 'verified' : 'not-verified' }}">{{ $row->status }}</span>
-          </td>
-          <td class="whitespace-nowrap px-4 py-3">
-            @if($row->purchase)
-              <a href="{{ route('purchase.show', $row->purchase->id) }}" class="text-primary-text">{{ $row->purchase->voucher_no }}</a>
-            @else
-              -
-            @endif
-          </td>
           <td class="whitespace-nowrap px-4 py-3 text-muted-foreground">
             {{ $row->handler->name ?? '-' }}{{ $row->handled_at ? ', ' . $row->handled_at->format('d-m-Y h:i A') : '' }}
           </td>

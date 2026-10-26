@@ -71,39 +71,66 @@
 
     @if($entry->status == 'Pending')
 
-      {{-- Booked before and then edited by the seller: OK updates that Purchase --}}
+      {{-- Saved before and then edited by the seller: OK updates that voucher (its type can't change) --}}
       @if($entry->purchase)
       <p class="col-full text-sm text-muted-foreground">The seller edited this sale after you saved it. OK updates {{ $entry->purchase->voucher_no }}.</p>
       @endif
 
-      <!-- How it is saved in your books. The dropdowns start on the usual accounts -->
+      @php
+        $controller = \App\Http\Controllers\Voucher\IncomingPurchaseController::class;
+
+        // Debit / Credit dropdown options of each voucher type, also used by the script below
+        $options = [];
+        foreach ($choices as $optionType => $choice) {
+          foreach (['dr', 'cr'] as $side) {
+            $list = $choice[$side]['ledgers']->map(fn ($ledger) => ['id' => (string) $ledger->id, 'name' => $ledger->name])->all();
+            if ($choice[$side]['purchase']) {
+              $list[] = ['id' => $controller::NEW_PURCHASE, 'name' => '+ New ledger: Purchase'];
+            }
+            if ($choice[$side]['supplier']) {
+              $list[] = ['id' => $controller::NEW_SUPPLIER, 'name' => '+ New ledger: ' . $seller->company_name];
+            }
+            $options[$optionType][$side] = $list;
+          }
+        }
+
+        // After a failed OK the form comes back with what was picked
+        $type = $entry->purchase ? $entry->purchase->type : old('voucher_type', $entry->defaults['type']);
+        $picked = [
+          'dr' => old('dr_ledger_id', $entry->defaults['by_type'][$type]['dr']),
+          'cr' => old('cr_ledger_id', $entry->defaults['by_type'][$type]['cr']),
+        ];
+      @endphp
+
+      <!-- How it is saved in your books. Changing the Voucher Type changes which ledgers each side lists -->
       <form id="accept-form" action="{{ route('incoming-purchases.accept', $entry->id) }}" method="POST" style="display: contents">
         @csrf
         <div>
-          <label for="purchase_ledger_id" class="text-xs text-muted-foreground">Purchase Account (Dr)</label>
-          <select id="purchase_ledger_id" name="purchase_ledger_id" class="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
-            @foreach($purchaseLedgers as $ledger)
-              <option value="{{ $ledger->id }}" @selected($entry->default_purchase == $ledger->id)>{{ $ledger->name }}</option>
+          <label for="voucher_type" class="text-xs text-muted-foreground">Save As (Voucher Type)</label>
+          <select id="voucher_type" name="voucher_type" @disabled($entry->purchase) class="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
+            @foreach($choices as $optionType => $choice)
+              <option value="{{ $optionType }}" @selected($type == $optionType)>{{ $choice['label'] }}</option>
             @endforeach
-            <option value="new" @selected($entry->default_purchase == 'new')>+ New ledger: Purchase</option>
           </select>
         </div>
+        @foreach(['dr' => 'Debit Account (Dr)', 'cr' => 'Credit Account (Cr)'] as $side => $label)
         <div>
-          <label for="supplier_ledger_id" class="text-xs text-muted-foreground">Supplier (Cr)</label>
-          <select id="supplier_ledger_id" name="supplier_ledger_id" class="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
-            @foreach($supplierLedgers as $ledger)
-              <option value="{{ $ledger->id }}" @selected($entry->default_supplier == $ledger->id)>{{ $ledger->name }}</option>
+          <label for="{{ $side }}_ledger_id" class="text-xs text-muted-foreground">{{ $label }}</label>
+          <select id="{{ $side }}_ledger_id" name="{{ $side }}_ledger_id" class="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
+            <option value="">Select</option>
+            @foreach($options[$type][$side] as $option)
+              <option value="{{ $option['id'] }}" @selected($picked[$side] == $option['id'])>{{ $option['name'] }}</option>
             @endforeach
-            <option value="new" @selected($entry->default_supplier == 'new')>+ New ledger: {{ $seller->company_name }}</option>
           </select>
         </div>
+        @endforeach
       </form>
 
       <div class="col-full flex flex-wrap justify-center gap-2 pt-2">
         <button type="submit" form="accept-form" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
           OK
         </button>
-        <form action="{{ route('incoming-purchases.reject', $entry->id) }}" method="POST" onsubmit="return confirm('Reject sale {{ $sale->voucher_no }}? It will not be saved as a purchase.')">
+        <form action="{{ route('incoming-purchases.reject', $entry->id) }}" method="POST" onsubmit="return confirm('Reject sale {{ $sale->voucher_no }}? It will not be saved in your books.')">
           @csrf
           <button type="submit" class="rounded-lg border border-input px-4 py-2 text-sm font-medium text-destructive-text transition-colors hover:bg-accent">
             Reject
@@ -121,7 +148,7 @@
         <p class="mt-1 text-sm font-medium text-foreground">
           {{ $entry->handler->name ?? '-' }}{{ $entry->handled_at ? ', ' . $entry->handled_at->format('d-m-Y h:i A') : '' }}
           @if($entry->purchase)
-            &nbsp;|&nbsp; Purchase <a href="{{ route('purchase.show', $entry->purchase->id) }}" class="text-primary-text">{{ $entry->purchase->voucher_no }}</a>
+            &nbsp;|&nbsp; Saved as <a href="{{ route($entry->purchase->type . '.show', $entry->purchase->id) }}" class="text-primary-text">{{ $entry->purchase->voucher_no }}</a>
           @endif
         </p>
       </div>
@@ -136,3 +163,32 @@
   </div>
 
 @endsection
+
+@if($entry->status == 'Pending')
+@push('scripts')
+<script>
+  // Voucher Type changed: refill the Debit / Credit dropdowns with that type's ledgers,
+  // each starting on what OK would use for that type
+  (function() {
+    var options = @json($options);
+    var defaults = @json($entry->defaults['by_type']);
+    var typeSelect = document.getElementById("voucher_type");
+
+    function fill(side, type) {
+      var select = document.getElementById(side + "_ledger_id");
+      select.innerHTML = '<option value="">Select</option>';
+      options[type][side].forEach(function(option) {
+        var el = new Option(option.name, option.id);
+        el.selected = String(defaults[type][side]) === option.id;
+        select.add(el);
+      });
+    }
+
+    typeSelect.addEventListener("change", function() {
+      fill("dr", typeSelect.value);
+      fill("cr", typeSelect.value);
+    });
+  })();
+</script>
+@endpush
+@endif

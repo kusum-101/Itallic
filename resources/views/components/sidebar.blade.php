@@ -34,7 +34,7 @@
           ['label' => 'Account Vouchers', 'icon' => 'receipt', 'children' => [
               ['label' => 'Payment Register',     'icon' => 'credit-card', 'url' => route('payment-register'),  'add' => route('payment')],
               ['label' => 'Purchase Register',    'icon' => 'boxes',       'url' => route('purchase-register'), 'add' => route('purchase')],
-              ['label' => 'Incoming Purchases' . ($incomingCount ? " ($incomingCount)" : ''), 'icon' => 'inbox', 'url' => route('incoming-purchases')],
+              ['label' => 'Incoming Vouchers' . ($incomingCount ? " ($incomingCount)" : ''), 'icon' => 'inbox', 'url' => route('incoming-purchases')],
               ['label' => 'Contra Register',      'icon' => 'repeat',      'url' => route('contra-register'),   'add' => route('contra')],
               ['label' => 'Receipt Register',     'icon' => 'receipt',     'url' => route('receipt-register'),  'add' => route('receipt')],
               ['label' => 'Journal Register',     'icon' => 'book-open',   'url' => route('journal-register'),  'add' => route('journal')],

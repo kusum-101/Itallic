@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * A Sales voucher sent to another company on this software.
- * The buyer company sees it under Incoming Purchases and books it as a Purchase with one OK,
+ * The buyer company sees it under Incoming Vouchers and saves it as a voucher (Purchase by default) with one OK,
  * so nobody has to type the same bill twice.
  */
 class InterCompanyEntry extends Model
@@ -26,7 +26,7 @@ class InterCompanyEntry extends Model
         return $this->belongsTo(Voucher::class, 'sale_voucher_id');
     }
 
-    // The buyer's Purchase voucher made from the sale
+    // The buyer's voucher made from the sale: a Purchase, or the type the buyer picked (IncomingPurchaseController::SAVE_AS)
     public function purchase()
     {
         return $this->belongsTo(Voucher::class, 'purchase_voucher_id');
@@ -53,7 +53,7 @@ class InterCompanyEntry extends Model
     /**
      * Called after a Sales voucher is saved. When its customer ledger (Debit side) has the GST No.
      * (or, without GST, the PAN No.) of another company on this software, that company gets
-     * the sale in its Incoming Purchases.
+     * the sale in its Incoming Vouchers.
      */
     public static function syncFromSale(Voucher $sale)
     {
@@ -97,9 +97,14 @@ class InterCompanyEntry extends Model
             $number = self::clean($number);
 
             if ($number) {
-                return Company::where('id', '!=', $sale->company_id)
+                $companies = Company::where('id', '!=', $sale->company_id)
                     ->whereRaw("UPPER(TRIM($column)) = ?", [$number])
-                    ->first();
+                    ->limit(2)
+                    ->get();
+
+                // Two companies with this number (e.g. one PAN, two GST registrations): the buyer
+                // isn't certain, so the sale goes nowhere rather than to the wrong company
+                return $companies->count() == 1 ? $companies->first() : null;
             }
         }
 

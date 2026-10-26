@@ -49,12 +49,16 @@ class CredentialController extends Controller
             return redirect()->route('login');
         }
 
+        // GST No. is checked and kept in capitals, without spaces around it
+        $request->merge(['gst_number' => strtoupper(trim((string) $request->gst_number)) ?: null]);
+
         $request->validate([
             'company_name' => 'required|string|max:255|unique:companies,company_name',
             'company_email' => 'required|email|unique:companies,company_email',
             'company_mobile' => 'required|string|max:20',
             'pan_number' => 'required|string|max:20',
-            'gst_number' => 'nullable|string|max:20',
+            // Unique: sales from other companies reach this company by its GST No.
+            'gst_number' => ['nullable', 'string', 'regex:' . Company::GST_FORMAT, 'unique:companies,gst'],
 
             'address' => 'required|string',
             'branch_address' => 'nullable|string',
@@ -64,6 +68,9 @@ class CredentialController extends Controller
             'pin_code' => 'required|string|max:10',
 
             'plan' => 'required|string',
+        ], [
+            'gst_number.regex'  => Company::GST_MESSAGE,
+            'gst_number.unique' => 'Another company already has this GST No.',
         ]);
 
         // Company save
