@@ -104,6 +104,23 @@
 
     <div>
       <div class="flex items-center gap-1.5">
+        <label for="stock_category_id" class="text-sm font-medium text-foreground">Stock Category</label>
+        @include('components.add-new', ['route' => 'stock-categories.create', 'title' => 'Add new stock category'])
+      </div>
+      {{-- data-stock-group: the category's stock group, filled into Stock Group by the script below --}}
+      <select id="stock_category_id" name="stock_category_id" class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
+        <option value="">None</option>
+        @foreach($stockCategories as $option)
+          <option value="{{ $option->id }}" data-stock-group="{{ $option->stock_group_id }}" @selected(old('stock_category_id', $fill->stock_category_id ?? '') == $option->id)>{{ $option->name }}</option>
+        @endforeach
+      </select>
+      @error('stock_category_id')
+        <p class="mt-1 text-sm text-destructive-text">{{ $message }}</p>
+      @enderror
+    </div>
+
+    <div>
+      <div class="flex items-center gap-1.5">
         <label for="stock_group_id" class="text-sm font-medium text-foreground">Stock Group</label>
         @include('components.add-new', ['route' => 'stock-groups.create', 'title' => 'Add new stock group'])
       </div>
@@ -113,23 +130,8 @@
           <option value="{{ $option->id }}" @selected(old('stock_group_id', $fill->stock_group_id ?? '') == $option->id)>{{ $option->name }}</option>
         @endforeach
       </select>
+      <p id="stock_group_hint" class="mt-1 hidden text-xs text-muted-foreground">From the stock category</p>
       @error('stock_group_id')
-        <p class="mt-1 text-sm text-destructive-text">{{ $message }}</p>
-      @enderror
-    </div>
-
-    <div>
-      <div class="flex items-center gap-1.5">
-        <label for="stock_category_id" class="text-sm font-medium text-foreground">Stock Category</label>
-        @include('components.add-new', ['route' => 'stock-categories.create', 'title' => 'Add new stock category'])
-      </div>
-      <select id="stock_category_id" name="stock_category_id" class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
-        <option value="">None</option>
-        @foreach($stockCategories as $option)
-          <option value="{{ $option->id }}" @selected(old('stock_category_id', $fill->stock_category_id ?? '') == $option->id)>{{ $option->name }}</option>
-        @endforeach
-      </select>
-      @error('stock_category_id')
         <p class="mt-1 text-sm text-destructive-text">{{ $message }}</p>
       @enderror
     </div>
@@ -199,6 +201,27 @@
       // /copy-allocation-details opens this page at #copy_from: start in the dropdown
       if (location.hash === "#copy_from") copySelect.focus();
     }
+
+    // Picking a Stock Category fills in its Stock Group, which then can't be changed here
+    // (ItemController::itemData saves the category's group too). With no category, any group can be picked
+    var categorySelect = document.getElementById("stock_category_id");
+    var groupSelect = document.getElementById("stock_group_id");
+    var groupHint = document.getElementById("stock_group_hint");
+
+    function fillGroup() {
+      var option = categorySelect.options[categorySelect.selectedIndex];
+      var group = option ? option.dataset.stockGroup : "";
+
+      if (group) groupSelect.value = group;
+
+      groupSelect.classList.toggle("pointer-events-none", !!group);
+      groupSelect.classList.toggle("opacity-70", !!group);
+      groupSelect.tabIndex = group ? -1 : 0;
+      groupHint.classList.toggle("hidden", !group);
+    }
+
+    categorySelect.addEventListener("change", fillGroup);
+    fillGroup();
 
     // Just copied: the name is the copied item's, so select it; typing replaces it with the new name.
     // Not after a reload: then the box has the user's own typed name back (draft, layouts/app)

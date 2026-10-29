@@ -231,10 +231,14 @@ class ItemController extends Controller
     // The values to save for an item (used by both store and update)
     private function itemData(Request $request)
     {
+        // An item in a stock category goes under that category's stock group (the form fills it in too).
+        // A category made before categories had groups has none: then the group picked on the form is kept
+        $categoryGroupId = StockCategory::whereKey($request->stock_category_id)->value('stock_group_id');
+
         return [
             'name'              => $request->name,
             'unit_id'           => $request->unit_id,
-            'stock_group_id'    => $request->stock_group_id,
+            'stock_group_id'    => $categoryGroupId ?? $request->stock_group_id,
             'stock_category_id' => $request->stock_category_id,
             'hsn_code'          => $request->hsn_code,
             'gst_percent'       => $request->gst_percent,
