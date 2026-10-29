@@ -35,21 +35,7 @@
         @enderror
       </div>
 
-      <div>
-        <div class="flex items-center gap-1.5">
-          <label for="stock_group_id" class="text-sm font-medium text-foreground">Stock Group <span class="text-destructive-text">*</span></label>
-          @include('components.add-new', ['route' => 'stock-groups.create', 'title' => 'Add new stock group'])
-        </div>
-        <select id="stock_group_id" name="stock_group_id" required class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
-          <option value="" disabled @selected(!old('stock_group_id', $stockCategory->stock_group_id))>Select Stock Group</option>
-          @foreach($stockGroupOptions as $option)
-            <option value="{{ $option->id }}" @selected(old('stock_group_id', $stockCategory->stock_group_id) == $option->id)>{{ $option->name }}</option>
-          @endforeach
-        </select>
-        @error('stock_group_id')
-          <p class="mt-1 text-sm text-destructive-text">{{ $message }}</p>
-        @enderror
-      </div>
+      @include('inventory-master.stock-category.under-field', ['selected' => $stockCategory->underValue()])
 
       <div class="form-card-foot">
         <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">

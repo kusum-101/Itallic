@@ -11,7 +11,7 @@
         @include('components.back', ['url' => route('dashboardUser')])
         <h1 class="text-xl font-bold tracking-tight text-foreground">List Stock Categories</h1>
       </div>
-      <p class="mt-0.5 text-sm text-muted-foreground">Total : {{ $stockCategories->count() }}</p>
+      <p class="mt-0.5 text-sm text-muted-foreground">Total : {{ count($rows) }}</p>
     </div>
     <a href="{{ route('stock-categories.create') }}" class="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
       <i data-lucide="plus" class="size-4"></i> Add
@@ -57,33 +57,68 @@
 
   </form>
 
-  <!-- Stock categories table -->
+  <!-- Stock categories table: a tree, sub-categories open under their category with the arrow.
+       A name search shows the matches with the categories above them, all opened -->
   <div class="list-table overflow-x-auto">
     <table class="chart-table w-full text-sm">
 
       <thead class="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
         <tr>
-          <th class="px-4 py-3 text-start font-semibold">S.No.</th>
+          <th class="w-12 px-4 py-3">
+            {{-- No aria-expanded here: .chart-toggle would turn the arrow sideways. The script shows one of the two icons.
+                 Drawn here as SVG: the theme's icon set (assets/main-*.js) has no double arrows --}}
+            <button type="button" id="stock-category-toggle-all" class="chart-toggle" title="Open all sub-categories">
+              <svg data-when-closed xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>
+              <svg data-when-open xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden size-4"><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></svg>
+            </button>
+          </th>
           <th class="px-4 py-3 text-start font-semibold">Stock Category</th>
           <th class="px-4 py-3 text-start font-semibold">Stock Group</th>
+          <th class="px-4 py-3 text-end font-semibold">Items</th>
           <th class="px-4 py-3 text-start font-semibold">Created Date</th>
           <th class="px-4 py-3 text-end font-semibold">Actions</th>
         </tr>
       </thead>
 
-      <tbody class="divide-y divide-border">
+      <tbody id="stock-category-rows" data-open-all="{{ request('name') ? '1' : '' }}" class="divide-y divide-border">
 
-        {{-- One row for each stock category. If there is none, the @empty part runs --}}
-        @forelse($stockCategories as $stockCategory)
-        <tr>
-          <td class="px-4 py-3 text-muted-foreground">{{ $loop->iteration }}</td>
-          <td class="px-4 py-3 font-medium text-foreground">{{ $stockCategory->name }}</td>
+        {{-- One row for each stock category, in tree order. If there is none, the @empty part runs.
+             data-parent: the row above it in the tree, used to open / close sub-categories --}}
+        @forelse($rows as $row)
+        @php($stockCategory = $row['category'])
+        <tr data-id="{{ $stockCategory->id }}" data-parent="{{ $row['parentId'] }}" class="{{ $row['depth'] && !request('name') ? 'hidden' : '' }}">
+          <td class="px-4 py-3">
+            @if($row['children'])
+              <button type="button" data-toggle-row class="chart-toggle" aria-expanded="false" aria-label="Show sub-categories of {{ $stockCategory->name }}">
+                <i data-lucide="chevron-down" class="size-4"></i>
+              </button>
+            @endif
+          </td>
+          <td class="px-4 py-3">
+            {{-- Each level goes 1.25rem further right --}}
+            <span class="{{ $row['depth'] ? 'text-foreground' : 'font-medium text-foreground' }}" style="padding-left: {{ $row['depth'] * 1.25 }}rem">
+              {{ $stockCategory->name }}@if($row['children']) <span class="text-muted-foreground">({{ $row['children'] }})</span>@endif
+            </span>
+          </td>
           <td class="px-4 py-3 text-muted-foreground">{{ $stockCategory->stockGroup->name ?? '-' }}</td>
+          <td class="px-4 py-3 text-end tabular-nums">
+            @if($stockCategory->items_count)
+              <a href="{{ route('items.index', ['stock_category' => $stockCategory->id]) }}" class="text-primary hover:underline" title="See these items">{{ $stockCategory->items_count }}</a>
+            @else
+              <span class="text-muted-foreground">0</span>
+            @endif
+          </td>
           <td class="px-4 py-3 text-muted-foreground">{{ $stockCategory->created_at->format('d-m-Y h:i A') }}</td>
 
-          <!-- Options for this stock category: 3-line button opens a small menu -->
+          <!-- This category's links: Add sub-category | Edit | Delete -->
           <td class="px-4 py-3">
             <div class="row-actions">
+                {{-- Only a category with a stock group can have sub-categories (they go in its group) --}}
+                @if($stockCategory->stock_group_id)
+                  <a href="{{ route('stock-categories.create', ['under' => 'category:' . $stockCategory->id]) }}" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
+                    <i data-lucide="plus" class="size-4"></i> Add sub-category
+                  </a>
+                @endif
                 <a href="{{ route('stock-categories.edit', $stockCategory->id) }}" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
                   <i data-lucide="pencil" class="size-4"></i> Edit
                 </a>
@@ -99,7 +134,7 @@
         </tr>
         @empty
         <tr>
-          <td colspan="5" class="px-4 py-8 text-center text-muted-foreground">No stock categories found.</td>
+          <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">No stock categories found.</td>
         </tr>
         @endforelse
 
@@ -173,6 +208,73 @@
     document.addEventListener("keydown", function(e) {
       if (e.key === "Escape") closeModal();
     });
+  })();
+
+  // Tree: the arrow on a category opens / closes its sub-categories, the one in the header all of them
+  (function() {
+    var body = document.getElementById("stock-category-rows");
+    var toggleAll = document.getElementById("stock-category-toggle-all");
+    var rows = Array.prototype.slice.call(body.querySelectorAll("tr[data-id]"));
+    var byId = {};
+    rows.forEach(function(row) { byId[row.dataset.id] = row; });
+
+    // The ids of the categories whose sub-categories are open (all of them after a name search)
+    var open = {};
+
+    function openAll() {
+      rows.forEach(function(row) { open[row.dataset.id] = true; });
+    }
+
+    // A row shows when every category above it is open (top-level rows always show)
+    function isShown(row) {
+      var parent = byId[row.dataset.parent];
+      while (parent) {
+        if (!open[parent.dataset.id]) return false;
+        parent = byId[parent.dataset.parent];
+      }
+      return true;
+    }
+
+    function render() {
+      var allOpen = true;
+
+      rows.forEach(function(row) {
+        row.classList.toggle("hidden", !isShown(row));
+
+        var button = row.querySelector("[data-toggle-row]");
+        if (button) {
+          button.setAttribute("aria-expanded", open[row.dataset.id] ? "true" : "false");
+          if (!open[row.dataset.id]) allOpen = false;
+        }
+      });
+
+      // Header arrow: double-down while something is closed, double-up once all are open
+      toggleAll.dataset.allOpen = allOpen ? "1" : "";
+      toggleAll.querySelector("[data-when-closed]").classList.toggle("hidden", allOpen);
+      toggleAll.querySelector("[data-when-open]").classList.toggle("hidden", !allOpen);
+      toggleAll.title = allOpen ? "Close all sub-categories" : "Open all sub-categories";
+    }
+
+    body.addEventListener("click", function(e) {
+      var button = e.target.closest("[data-toggle-row]");
+      if (!button) return;
+
+      var id = button.closest("tr").dataset.id;
+      open[id] = !open[id];
+      render();
+    });
+
+    toggleAll.addEventListener("click", function() {
+      if (toggleAll.dataset.allOpen) {
+        open = {};
+      } else {
+        openAll();
+      }
+      render();
+    });
+
+    if (body.dataset.openAll) openAll();
+    render();
   })();
 </script>
 @endpush
