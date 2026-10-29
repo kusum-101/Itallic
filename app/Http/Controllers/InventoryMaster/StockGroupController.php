@@ -150,6 +150,10 @@ class StockGroupController extends Controller
             return redirect()->route('stock-groups.index')->with('error', 'Move or delete the stock groups under this group first.');
         }
 
+        if ($stockGroup->stockCategories()->exists()) {
+            return redirect()->route('stock-groups.index')->with('error', 'Move or delete the stock categories in this stock group first.');
+        }
+
         if ($stockGroup->items()->exists()) {
             return redirect()->route('stock-groups.index')->with('error', 'Move or delete the items under this stock group first.');
         }

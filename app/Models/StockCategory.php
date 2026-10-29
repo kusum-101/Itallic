@@ -14,7 +14,13 @@ class StockCategory extends Model
         return $this->belongsTo(Company::class);
     }
 
-    // The stock category this one sits under (null for a top-level/Primary category)
+    // The stock group this category belongs to
+    public function stockGroup()
+    {
+        return $this->belongsTo(StockGroup::class);
+    }
+
+    // The stock category this one sat under before categories went under stock groups (old data only)
     public function parent()
     {
         return $this->belongsTo(StockCategory::class, 'parent_id');

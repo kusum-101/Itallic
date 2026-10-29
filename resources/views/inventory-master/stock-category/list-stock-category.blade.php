@@ -41,11 +41,10 @@
       placeholder="Stock Category Name"
       class="h-10 w-44 shrink-0 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring/20">
 
-    <select name="under" class="h-10 w-44 shrink-0 rounded-lg border border-input bg-background px-3 text-sm">
-      <option value="">Under</option>
-      <option value="primary" @selected(request('under') == 'primary')>Primary</option>
-      @foreach($underOptions as $option)
-        <option value="{{ $option->id }}" @selected(request('under') == $option->id)>{{ $option->name }}</option>
+    <select name="stock_group" class="h-10 w-44 shrink-0 rounded-lg border border-input bg-background px-3 text-sm">
+      <option value="">Stock Group</option>
+      @foreach($stockGroupOptions as $option)
+        <option value="{{ $option->id }}" @selected(request('stock_group') == $option->id)>{{ $option->name }}</option>
       @endforeach
     </select>
 
@@ -66,7 +65,7 @@
         <tr>
           <th class="px-4 py-3 text-start font-semibold">S.No.</th>
           <th class="px-4 py-3 text-start font-semibold">Stock Category</th>
-          <th class="px-4 py-3 text-start font-semibold">Under</th>
+          <th class="px-4 py-3 text-start font-semibold">Stock Group</th>
           <th class="px-4 py-3 text-start font-semibold">Created Date</th>
           <th class="px-4 py-3 text-end font-semibold">Actions</th>
         </tr>
@@ -79,7 +78,7 @@
         <tr>
           <td class="px-4 py-3 text-muted-foreground">{{ $loop->iteration }}</td>
           <td class="px-4 py-3 font-medium text-foreground">{{ $stockCategory->name }}</td>
-          <td class="px-4 py-3 text-muted-foreground">{{ $stockCategory->parent->name ?? 'Primary' }}</td>
+          <td class="px-4 py-3 text-muted-foreground">{{ $stockCategory->stockGroup->name ?? '-' }}</td>
           <td class="px-4 py-3 text-muted-foreground">{{ $stockCategory->created_at->format('d-m-Y h:i A') }}</td>
 
           <!-- Options for this stock category: 3-line button opens a small menu -->

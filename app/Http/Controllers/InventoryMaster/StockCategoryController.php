@@ -4,10 +4,10 @@ namespace App\Http\Controllers\InventoryMaster;
 
 use App\Http\Controllers\Controller;
 use App\Models\StockCategory;
+use App\Models\StockGroup;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class StockCategoryController extends Controller
 {
@@ -23,24 +23,20 @@ class StockCategoryController extends Controller
         $companyId = session('company_id');
 
         $stockCategories = StockCategory::where('company_id', $companyId)
-            ->with('parent')
+            ->with('stockGroup')
             ->when($request->name, function ($query, $name) {
                 $query->where('name', 'like', "%{$name}%");
             })
-            ->when($request->under, function ($query, $parentId) {
-                if ($parentId === 'primary') {
-                    $query->whereNull('parent_id');
-                } else {
-                    $query->where('parent_id', $parentId);
-                }
+            ->when($request->stock_group, function ($query, $stockGroupId) {
+                $query->where('stock_group_id', $stockGroupId);
             })
             ->orderBy('name')
             ->get();
 
-        // Every stock category of this company, used to fill the "Under" filter dropdown
-        $underOptions = StockCategory::where('company_id', $companyId)->orderBy('name')->get();
+        // Every stock group of this company, used to fill the "Stock Group" filter dropdown
+        $stockGroupOptions = StockGroup::where('company_id', $companyId)->orderBy('name')->get();
 
-        return view('inventory-master.stock-category.list-stock-category', compact('user', 'stockCategories', 'underOptions'));
+        return view('inventory-master.stock-category.list-stock-category', compact('user', 'stockCategories', 'stockGroupOptions'));
     }
 
     // Add Stock Category page: the form to create a new stock category
@@ -52,9 +48,9 @@ class StockCategoryController extends Controller
             return redirect()->route('login');
         }
 
-        $parentOptions = StockCategory::where('company_id', session('company_id'))->orderBy('name')->get();
+        $stockGroupOptions = StockGroup::where('company_id', session('company_id'))->orderBy('name')->get();
 
-        return view('inventory-master.stock-category.stock-category', compact('user', 'parentOptions'));
+        return view('inventory-master.stock-category.stock-category', compact('user', 'stockGroupOptions'));
     }
 
     // Save the new stock category
@@ -62,21 +58,12 @@ class StockCategoryController extends Controller
     {
         $companyId = session('company_id');
 
-        $request->validate([
-            'name' => [
-                'required', 'string', 'max:255',
-                Rule::unique('stock_categories')->where('company_id', $companyId),
-            ],
-            // Empty = Primary. Only a stock category of this company can be the parent
-            'parent_id' => ['nullable', Rule::exists('stock_categories', 'id')->where('company_id', $companyId)],
-        ], [
-            'name.unique' => 'A stock category with this name already exists.',
-        ]);
+        $request->validate($this->rules($companyId), $this->messages());
 
         StockCategory::create([
-            'company_id' => $companyId,
-            'parent_id'  => $request->parent_id,
-            'name'       => $request->name,
+            'company_id'     => $companyId,
+            'stock_group_id' => $request->stock_group_id,
+            'name'           => $request->name,
         ]);
 
         return redirect()->route('stock-categories.index')->with('success', 'Stock category added successfully.');
@@ -95,13 +82,9 @@ class StockCategoryController extends Controller
 
         $stockCategory = StockCategory::where('company_id', $companyId)->findOrFail($id);
 
-        // A stock category can't be placed under itself, so leave it out of the options
-        $parentOptions = StockCategory::where('company_id', $companyId)
-            ->where('id', '!=', $stockCategory->id)
-            ->orderBy('name')
-            ->get();
+        $stockGroupOptions = StockGroup::where('company_id', $companyId)->orderBy('name')->get();
 
-        return view('inventory-master.stock-category.edit-stock-category', compact('user', 'stockCategory', 'parentOptions'));
+        return view('inventory-master.stock-category.edit-stock-category', compact('user', 'stockCategory', 'stockGroupOptions'));
     }
 
     // Save changes to an existing stock category
@@ -111,31 +94,13 @@ class StockCategoryController extends Controller
 
         $stockCategory = StockCategory::where('company_id', $companyId)->findOrFail($id);
 
-        $request->validate([
-            'name' => [
-                'required', 'string', 'max:255',
-                Rule::unique('stock_categories')->where('company_id', $companyId)->ignore($stockCategory->id),
-            ],
-            'parent_id' => ['nullable', Rule::exists('stock_categories', 'id')->where('company_id', $companyId)],
-        ], [
-            'name.unique' => 'A stock category with this name already exists.',
-        ]);
-
-        // A stock category can't go under itself or under one of its own sub-categories (that would make a loop),
-        // so climb up from the new parent and make sure this category is not on the way
-        $parent = StockCategory::where('company_id', $companyId)->find($request->parent_id);
-
-        for ($above = $parent; $above; $above = $above->parent) {
-            if ($above->id == $stockCategory->id) {
-                throw ValidationException::withMessages([
-                    'parent_id' => 'A stock category can\'t be placed under itself or one of its own sub-categories.',
-                ]);
-            }
-        }
+        $request->validate($this->rules($companyId, $stockCategory), $this->messages());
 
         $stockCategory->update([
-            'name'      => $request->name,
-            'parent_id' => $request->parent_id,
+            'name'           => $request->name,
+            'stock_group_id' => $request->stock_group_id,
+            // Categories no longer sit under other categories, so an old one is taken out from under its parent
+            'parent_id'      => null,
         ]);
 
         return redirect()->route('stock-categories.index')->with('success', 'Stock category updated successfully.');
@@ -146,8 +111,9 @@ class StockCategoryController extends Controller
     {
         $stockCategory = StockCategory::where('company_id', session('company_id'))->findOrFail($id);
 
+        // Only old data can have these (categories used to sit under other categories): edit them to free this one
         if ($stockCategory->children()->exists()) {
-            return redirect()->route('stock-categories.index')->with('error', 'Move or delete the stock categories under this category first.');
+            return redirect()->route('stock-categories.index')->with('error', 'Edit the stock categories that were under this category first.');
         }
 
         if ($stockCategory->items()->exists()) {
@@ -157,5 +123,26 @@ class StockCategoryController extends Controller
         $stockCategory->delete();
 
         return redirect()->route('stock-categories.index')->with('success', 'Stock category deleted successfully.');
+    }
+
+    // Rules of the Add / Edit form. $stockCategory: the one being edited, so its own name doesn't count as taken
+    private function rules($companyId, $stockCategory = null)
+    {
+        return [
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('stock_categories')->where('company_id', $companyId)->ignore($stockCategory?->id),
+            ],
+            // Every stock category belongs to a stock group of this company
+            'stock_group_id' => ['required', Rule::exists('stock_groups', 'id')->where('company_id', $companyId)],
+        ];
+    }
+
+    private function messages()
+    {
+        return [
+            'name.unique'             => 'A stock category with this name already exists.',
+            'stock_group_id.required' => 'Select the stock group this category belongs to.',
+        ];
     }
 }

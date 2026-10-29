@@ -37,16 +37,16 @@
 
       <div>
         <div class="flex items-center gap-1.5">
-          <label for="parent_id" class="text-sm font-medium text-foreground">Under</label>
-          @include('components.add-new', ['route' => 'stock-categories.create', 'title' => 'Add new stock category'])
+          <label for="stock_group_id" class="text-sm font-medium text-foreground">Stock Group <span class="text-destructive-text">*</span></label>
+          @include('components.add-new', ['route' => 'stock-groups.create', 'title' => 'Add new stock group'])
         </div>
-        <select id="parent_id" name="parent_id" class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
-          <option value="">Primary (top-level stock category)</option>
-          @foreach($parentOptions as $option)
-            <option value="{{ $option->id }}" @selected(old('parent_id', $stockCategory->parent_id) == $option->id)>{{ $option->name }}</option>
+        <select id="stock_group_id" name="stock_group_id" required class="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
+          <option value="" disabled @selected(!old('stock_group_id', $stockCategory->stock_group_id))>Select Stock Group</option>
+          @foreach($stockGroupOptions as $option)
+            <option value="{{ $option->id }}" @selected(old('stock_group_id', $stockCategory->stock_group_id) == $option->id)>{{ $option->name }}</option>
           @endforeach
         </select>
-        @error('parent_id')
+        @error('stock_group_id')
           <p class="mt-1 text-sm text-destructive-text">{{ $message }}</p>
         @enderror
       </div>

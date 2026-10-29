@@ -26,6 +26,12 @@ class StockGroup extends Model
         return $this->hasMany(StockGroup::class, 'parent_id');
     }
 
+    // The stock categories that belong to this stock group
+    public function stockCategories()
+    {
+        return $this->hasMany(StockCategory::class);
+    }
+
     // The items that sit under this stock group
     public function items()
     {
